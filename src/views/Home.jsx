@@ -1,13 +1,25 @@
-// Overview: shortages first (what needs attention), then the regional truck board (F1).
+// Dashboard: one community's digital ledger. What is in stock, what is missing, what is running low.
 import * as store from "../store/store.js";
-import { COMMUNITIES, PARTS } from "../data/seed.js";
-import { DAY, bestSource, openBreakdowns, runningLow, trucksRunning, truckStatus, waitingForPart, isWaterTruck } from "../store/derive.js";
+import { COMMUNITIES, EMBED, PARTS } from "../data/seed.js";
+import { DAY, ago, bestSource, openBreakdowns, sharing, stock, trucksRunning, truckStatus } from "../store/derive.js";
 import { isHighRisk } from "../weather.js";
-import { myCommunity } from "./common.jsx";
+import { myCommunity, FocusSelect } from "./common.jsx";
 import { t } from "../i18n.js";
-import Board from "./Board.jsx";
 
-const daysDown = (ts) => { const d = Math.max(1, Math.round((Date.now() - ts) / DAY)); return d === 1 ? "1 day" : `${d} days`; };
+const STATUS = { missing: ["b-bad", "✕ Missing"], low: ["b-warn", "● Low"], ok: ["b-ok", "✓ In stock"] };
+const ORDER = ["missing", "low", "ok"];
+
+// Every catalogue part for one community, with its status.
+function inventory(ev, c) {
+  const rates = EMBED.rates[c] || {};
+  const neededNow = new Map(openBreakdowns(ev, c).map((b) => [b.part, b.asset]));
+  return Object.keys(PARTS).map((p) => {
+    const s = stock(ev, c, p);
+    const need = Math.ceil(3 * ((rates[p] || [0])[0])); // usual use over the next 3 winter months
+    const status = s.q === 0 ? "missing" : s.q < need ? "low" : "ok";
+    return { p, q: s.q, last: s.last, need, status, brokenAsset: neededNow.get(p) };
+  });
+}
 
 function findPart(part, community) {
   if (store.getAs() === "region") store.setPref("focus", community);
@@ -20,7 +32,7 @@ function Welcome() {
   return (
     <div className="welcome" role="region" aria-label="Welcome">
       <p><strong>Water in Nunavik arrives by truck.</strong> When a truck part breaks, a community can go weeks without water, even if the part sits in the next village's paper ledger.</p>
-      <p>Ledger North shares those ledgers between communities, works offline, and plans sealift orders. <span className="badge b-grey">Demo · sample data</span></p>
+      <p>Ledger North turns each garage's paper ledger into a digital one, and puts every community's ledger in one place. <span className="badge b-grey">Demo · sample data</span></p>
       <div className="btn-row">
         <a className="btn" href="#guide">How it works</a>
         <button className="btn ghost" onClick={() => store.setPref("welcomed", "1")}>Hide</button>
@@ -34,80 +46,113 @@ function Tile({ n, label, tone }) {
 }
 
 export default function Home() {
-  const ev = store.getEvents(); const as = store.getAs(); const region = as === "region";
-  const me = myCommunity();
-  const places = region ? COMMUNITIES.map((c) => c.name) : [me];
-
-  const waiting = places.flatMap((c) => waitingForPart(ev, c)).sort((a, b) => a.ts - b.ts);
-  const trucksDown = places.reduce((s, c) => s + openBreakdowns(ev, c).filter((o) => isWaterTruck(o.asset)).length, 0);
-  const low = region ? [] : runningLow(ev, me);
-
-  let tiles;
-  if (region) {
-    const reduced = COMMUNITIES.filter((c) => truckStatus(trucksRunning(ev, c.name), c.water) !== "normal").length;
-    tiles = [
-      <Tile key="a" n={`${reduced} of ${COMMUNITIES.length}`} label="communities with reduced water service" tone={reduced ? "warn" : ""} />,
-      <Tile key="b" n={trucksDown} label="water trucks out of service" tone={trucksDown ? "warn" : ""} />,
-      <Tile key="c" n={waiting.length} label="breakdowns waiting for a part" tone={waiting.length ? "bad" : ""} />,
-    ];
-  } else {
-    const c = COMMUNITIES.find((x) => x.name === me); const run = trucksRunning(ev, me);
-    tiles = [
-      <Tile key="a" n={`${run} of ${c.water}`} label={`water trucks running (${t(truckStatus(run, c.water)).replace(/^\S+\s/, "")})`} tone={run < c.water ? "warn" : ""} />,
-      <Tile key="b" n={waiting.length} label="breakdowns waiting for a part" tone={waiting.length ? "bad" : ""} />,
-      <Tile key="c" n={low.length} label="parts running low this winter" tone={low.length ? "warn" : ""} />,
-    ];
-  }
+  const ev = store.getEvents(); const region = store.getAs() === "region";
+  const me = myCommunity(); const c = COMMUNITIES.find((x) => x.name === me);
+  const inv = inventory(ev, me);
+  const missing = inv.filter((x) => x.status === "missing").sort((a, b) => !!b.brokenAsset - !!a.brokenAsset);
+  const low = inv.filter((x) => x.status === "low");
+  const run = trucksRunning(ev, me);
+  const entries = ev.filter((e) => e.type === "stock" && e.community === me).sort((a, b) => b.ts - a.ts).slice(0, 5);
 
   return (
     <>
       <Welcome />
-      <h1>{region ? t("homeRegion") : t("homeTitle", me)}</h1>
-      <p className="lede">What needs attention today. All numbers are sample data for the demo.</p>
-      <div className="tiles">{tiles}</div>
+      <h1>{t("homeTitle", me)}</h1>
+      <p className="lede">What this garage has and what it is missing, built from its paper ledger. Sample data for the demo.</p>
+      <FocusSelect style={{ maxWidth: 320 }} />
 
-      <section aria-labelledby="waitH">
-        <h2 id="waitH">Waiting for a part</h2>
-        <p className="note">Equipment that is broken and the part needed is not in stock locally.</p>
-        {waiting.length ? (
+      <div className="tiles">
+        <Tile n={`${inv.length - missing.length} of ${inv.length}`} label="parts in stock" />
+        <Tile n={missing.length} label="parts missing" tone={missing.length ? "bad" : ""} />
+        <Tile n={low.length} label="running low this winter" tone={low.length ? "warn" : ""} />
+        <Tile n={`${run} of ${c.water}`} label={`water trucks running (${t(truckStatus(run, c.water)).replace(/^\S+\s/, "")})`} tone={run < c.water ? "warn" : ""} />
+      </div>
+      <p className="note">Ledger last updated {ago(entries[0]?.ts)}.</p>
+
+      <section aria-labelledby="missH">
+        <h2 id="missH">Missing</h2>
+        {missing.length ? (
           <ul className="list">
-            {waiting.map((b) => {
-              const src = bestSource(ev, b.community, b.part, isHighRisk);
+            {missing.map((x) => {
+              const src = bestSource(ev, me, x.p, isHighRisk);
               return (
-                <li key={b.id}>
+                <li key={x.p}>
                   <span>
-                    <strong>{region && `${b.community}: `}{b.asset}</strong> · down {daysDown(b.ts)}<br />
-                    <span className="note">Needs {PARTS[b.part].toLowerCase()} · 0 in stock</span><br />
+                    <strong>{PARTS[x.p]}</strong>
+                    {x.brokenAsset && <><br /><span className="badge b-bad">Needed now: {x.brokenAsset} is down</span></>}<br />
                     <span className="note">{src
-                      ? `Fastest: ${src.name}${src.eta ? `, ~${src.eta.days} day${src.eta.days > 1 ? "s" : ""} by air` : ", sealift only"}`
-                      : "No community sharing this part has it. Order from a supplier."}</span>
+                      ? `${src.name} has it${src.eta ? `, ~${src.eta.days} day${src.eta.days > 1 ? "s" : ""} by air` : ", sealift only"}`
+                      : "No community sharing its ledger has this part."}</span>
                   </span>
-                  <button className="btn" onClick={() => findPart(b.part, b.community)}>Find this part</button>
+                  <button className="btn" onClick={() => findPart(x.p, me)}>Find this part</button>
                 </li>
               );
             })}
           </ul>
-        ) : <p>Nothing is waiting for a part. ✓</p>}
+        ) : <p>Nothing is missing. ✓</p>}
       </section>
 
-      {!region && (
-        <section aria-labelledby="lowH">
-          <h2 id="lowH">Running low this winter</h2>
-          <p className="note">Parts with less in stock than you usually use in the next 3 winter months. Order now or plan them in the <a href="#plan">sealift plan</a>.</p>
-          {low.length ? (
-            <ul className="list">
-              {low.map((x) => (
-                <li key={x.p}>
-                  <span><strong>{PARTS[x.p]}</strong><br /><span className="note">{x.have} in stock · usually {x.need} used in the next 3 months</span></span>
-                  <span className={"badge " + (x.have === 0 ? "b-bad" : "b-warn")}>{x.have === 0 ? "✕ Out" : "● Low"}</span>
-                </li>
+      <section aria-labelledby="invH">
+        <h2 id="invH">All parts</h2>
+        <div className="sheet ledger">
+          <div className="tablewrap"><table>
+            <thead><tr><th scope="col">Part</th><th scope="col">In stock</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
+            <tbody>
+              {[...inv].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status)).map((x) => (
+                <tr key={x.p}>
+                  <td>{PARTS[x.p]}</td>
+                  <td><strong>{x.q}</strong>{x.status === "low" && <span className="note"> / needs {x.need}</span>}</td>
+                  <td><span className={"badge " + STATUS[x.status][0]}>{STATUS[x.status][1]}</span></td>
+                  <td className="note">{ago(x.last)}</td>
+                </tr>
               ))}
-            </ul>
-          ) : <p>Stock covers the next 3 months. ✓</p>}
-        </section>
-      )}
+            </tbody>
+          </table></div>
+        </div>
+        <p className="note">Low means less than this garage usually uses in the next 3 winter months.</p>
+      </section>
 
-      <Board />
+      <section aria-labelledby="recentH">
+        <h2 id="recentH">Latest ledger entries</h2>
+        <p className="note">Every entry keeps who wrote it, like the paper ledger.</p>
+        <ul className="list">
+          {entries.map((e) => (
+            <li key={e.id}>
+              <span><strong>{e.reason === "count" ? `Counted ${e.delta}` : e.delta > 0 ? `+${e.delta} in` : `${-e.delta} out`}</strong> · {PARTS[e.part].toLowerCase()}<br /><span className="note">{e.by} · {ago(e.ts)}</span></span>
+            </li>
+          ))}
+        </ul>
+        <div className="btn-row"><a className="btn ghost" href="#snap">Add entries from a ledger photo</a></div>
+      </section>
+
+      {region && <AllLedgers ev={ev} />}
     </>
+  );
+}
+
+// Regional view only: every community's ledger in one place.
+function AllLedgers({ ev }) {
+  return (
+    <section aria-labelledby="allH">
+      <h2 id="allH">All community ledgers</h2>
+      <p className="note">Pick a community to see its dashboard. ⚠ means no update in over 7 days.</p>
+      <div className="tablewrap"><table>
+        <thead><tr><th scope="col">Community</th><th scope="col">Parts missing</th><th scope="col">Last update</th><th scope="col">Shares stock</th></tr></thead>
+        <tbody>
+          {COMMUNITIES.map((c) => {
+            const inv = inventory(ev, c.name);
+            const last = Math.max(0, ...inv.map((x) => x.last));
+            return (
+              <tr key={c.name}>
+                <td><button className="linkbtn" onClick={() => { store.setPref("focus", c.name); window.scrollTo(0, 0); }}>{c.name}</button></td>
+                <td>{inv.filter((x) => x.status === "missing").length}</td>
+                <td className="note">{ago(last)}{Date.now() - last > 7 * DAY && " ⚠"}</td>
+                <td>{sharing(ev, c.name) ? "Yes" : "Not yet"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table></div>
+    </section>
   );
 }

@@ -1,5 +1,5 @@
 // Pure functions: all state is derived from the event list (SPEC §6).
-import { COMMUNITIES, DEFAULT_SHARING, EMBED, FLIGHT_LEGS, PARTS, SEA_ONLY } from "../data/seed.js";
+import { COMMUNITIES, DEFAULT_SHARING, FLIGHT_LEGS, SEA_ONLY } from "../data/seed.js";
 
 export const DAY = 864e5;
 export const C = (n) => COMMUNITIES.find((c) => c.name === n);
@@ -97,22 +97,6 @@ export function estArrivalDays(from, to, part, isHighRisk = () => false) {
 }
 
 /* ---------- Shortages (Overview) ---------- */
-// Open breakdowns whose needed part is at 0 in that community: equipment is waiting on a part.
-export function waitingForPart(ev, c) {
-  return openBreakdowns(ev, c)
-    .filter((b) => stock(ev, b.community, b.part).q === 0)
-    .sort((a, b) => a.ts - b.ts);
-}
-
-// Parts that will run short over the next 3 winter months (winter monthly rate × 3).
-export function runningLow(ev, c) {
-  const rates = EMBED.rates[c] || {};
-  return Object.keys(PARTS).map((p) => {
-    const need = Math.ceil(3 * ((rates[p] || [0])[0]));
-    return { p, have: stock(ev, c, p).q, need };
-  }).filter((x) => x.need > 0 && x.have < x.need).sort((a, b) => (a.have - a.need) - (b.have - b.need));
-}
-
 // Fastest sharing community that has the part in stock, or null.
 export function bestSource(ev, to, part, isHighRisk) {
   let best = null;

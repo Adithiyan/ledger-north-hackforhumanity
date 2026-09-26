@@ -83,6 +83,9 @@ Households are not direct users in the MVP.
 
 ## 4. Scope
 
+### Scope decision (Sept 26, pitch focus)
+Pitch = (1) digitize the inventory ledger, (2) centralize the ledgers. The app has three tabs: **Dashboard** (one community's ledger: in stock / missing / running low; regional view adds all ledgers), **Snap ledger**, **Find a part** (ranked by estimated arrival by air). A Guide page is linked from the footer. F4 breakdown logging, F6 sealift plan and F7 report are removed from the UI (in git history) and move to the roadmap.
+
 ### In the MVP (must work in the demo)
 - F1 Regional board
 - F2 Snap ledger → confirm → save

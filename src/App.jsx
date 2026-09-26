@@ -6,20 +6,14 @@ import { onToast } from "./toast.js";
 import Home from "./views/Home.jsx";
 import Snap from "./views/Snap.jsx";
 import Find from "./views/Find.jsx";
-import Breakdowns from "./views/Breakdowns.jsx";
-import Plan from "./views/Plan.jsx";
-import Report from "./views/Report.jsx";
 import Guide from "./views/Guide.jsx";
 
-const VIEWS = { home: Home, snap: Snap, find: Find, broke: Breakdowns, plan: Plan, report: Report, guide: Guide };
+const VIEWS = { home: Home, snap: Snap, find: Find, guide: Guide };
+const NAV = ["home", "snap", "find"]; // Guide is linked from the footer and welcome card
 const ICON = {
   home: <path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" />,
   snap: <><path d="M4 7h3l2-3h6l2 3h3v13H4z" /><circle cx="12" cy="13" r="4" /></>,
   find: <><circle cx="10" cy="10" r="6" /><path d="M15 15l6 6" /></>,
-  broke: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></>,
-  plan: <path d="M3 17h18l-2 4H5zM6 17V9h12v8M9 9V5h6v4" />,
-  report: <path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7" />,
-  guide: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></>,
 };
 const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS[v] ? v : "home"; };
 
@@ -82,7 +76,7 @@ export default function App() {
         </div>
       </header>
       <nav className="tabs" aria-label="Sections">
-        {Object.keys(VIEWS).map((v) => (
+        {NAV.map((v) => (
           <button key={v} aria-current={v === view ? "page" : undefined} onClick={() => go(v)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{ICON[v]}</svg>
             <span>{t(v)}</span>
@@ -91,6 +85,9 @@ export default function App() {
       </nav>
       <main id="main" tabIndex={-1} ref={mainRef}>
         <View key={as} />
+        <footer className="foot">
+          <a href="#guide">How Ledger North works</a> · <button className="linkbtn" onClick={store.resetDemo}>Reset demo data</button>
+        </footer>
       </main>
       <div className="toast" role="status" aria-live="polite" hidden={!toastMsg}>{toastMsg}</div>
     </>
