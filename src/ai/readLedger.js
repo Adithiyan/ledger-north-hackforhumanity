@@ -22,14 +22,35 @@ const DEMO_ROWS = [
   { date: "2026-09-26", part: "Filter cartridges", qty_in: 6, qty_out: 0, initials: "JK", confidence: 0.58, raw_text: "Filtr cartrdg" },
 ];
 
-// Fuzzy match: catalogue part sharing the most words (> 2 letters) with what was read.
+// Edit distance, for handwriting misspellings like "filtr" → "filter".
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+const words = (s) => (s || "").toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 2);
+
+// Fuzzy match to the catalogue. Returns "" when nothing is close, so the person picks instead of a wrong guess.
 export function matchPart(name) {
-  const n = (name || "").toLowerCase(); let best = "P01", score = -1;
+  const read = words(name); let best = "", score = 0;
   Object.entries(PARTS).forEach(([k, v]) => {
-    const s = v.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && n.includes(w)).length;
+    const cat = words(v); let s = 0;
+    cat.forEach((w) => {
+      let m = 0;
+      read.forEach((r) => {
+        if (r === w) m = 1;
+        else if (w.length >= 4 && r.length >= 4 && (w.startsWith(r) || r.startsWith(w))) m = Math.max(m, 0.9);
+        else if (w.length >= 4 && r.length >= 4 && lev(r, w) <= 2) m = Math.max(m, 0.8);
+      });
+      s += m;
+    });
+    s -= 0.01 * cat.length; // prefer the more specific catalogue name on ties
     if (s > score) { score = s; best = k; }
   });
-  return best;
+  return score >= 0.7 ? best : "";
 }
 
 // Shrink phone photos (often 5–10 MB) to ~1600 px JPEG: faster on satellite links, within API limits.

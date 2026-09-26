@@ -16,6 +16,7 @@ export default function Snap() {
   const [msg, setMsg] = useState("");
   const [camOn, setCamOn] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [saveErr, setSaveErr] = useState("");
   // Saved reader settings (per provider), and the draft being edited in Settings.
   // Optional built-in key from the GROQ_KEY repo secret (free tier, revoked after the event); a key saved here wins.
   const provider = store.getPref("provider") || (BUILT_IN_GROQ ? "groq" : "demo");
@@ -64,15 +65,19 @@ export default function Snap() {
     }
   }
 
-  const edit = (i, k, v) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  // Editing a row marks it as checked by a person.
+  const edit = (i, k, v) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v, checked: true } : r)));
+  const removeRow = (i) => setRows((rs) => rs.filter((_, j) => j !== i));
 
   function onSave() {
+    if (rows.some((r) => !r.pid)) { setSaveErr("Choose a part for every row, or remove the rows you do not need."); return; }
     const wasOnline = store.getDevice().online;
+    let n = 0;
     rows.forEach((r) => {
       const delta = (+r.qty_in || 0) - (+r.qty_out || 0);
-      if (delta) store.addEvent({ type: "stock", community: as, part: r.pid, delta, reason: "ledger page", by: (r.initials || "") + " via ledger photo" });
+      if (delta) { n++; store.addEvent({ type: "stock", community: as, part: r.pid, delta, reason: "ledger page", by: (r.initials || "") + " via ledger photo" }); }
     });
-    const n = rows.length; setRows(null); setPhoto(null); setMsg("");
+    setRows(null); setPhoto(null); setMsg(""); setSaveErr("");
     toast(wasOnline ? `Saved ${n} entries and shared with the region.` : `Saved ${n} entries on this device. They will sync when you are back online.`);
   }
 
@@ -91,63 +96,61 @@ export default function Snap() {
     setModelIn(store.getPref("model:" + p) || PROVIDERS[p].model || "");
   }
 
-  const addRow = () => setRows((rs) => [...(rs || []), { date: new Date().toISOString().slice(0, 10), part: "", qty_in: 0, qty_out: 0, initials: "", confidence: 1, pid: "P01" }]);
+  const addRow = () => setRows((rs) => [...(rs || []), { date: new Date().toISOString().slice(0, 10), part: "", qty_in: 0, qty_out: 0, initials: "", confidence: 1, pid: "", added: true }]);
 
   return (
     <>
       <h1>{t("snapTitle")}</h1>
       <p className="lede">Keep writing in your ledger. Take a photo of the page and we turn it into entries you check before saving. The paper ledger stays yours; this makes a copy the municipality can use.</p>
-      <div className="grid2">
-        <div>
-          <div className="drop">
-            {camOn ? <Camera onShot={(d) => { setPhoto(d); setCamOn(false); }} onClose={() => setCamOn(false)} /> : (
-              <div className="btn-row" style={{ justifyContent: "center", marginTop: 0 }}>
-                <button className="btn" onClick={() => setCamOn(true)}>Use camera</button>
-                <label className="btn ghost" htmlFor="photo">Choose a picture or PDF</label>
-              </div>
-            )}
-            <input id="photo" type="file" accept="image/*,application/pdf,.pdf" className="sr" onChange={onFile} />
-            <p className="note">{aiOn
-              ? `Reading with ${PROVIDERS[provider].label.split(" (")[0]} when online.`
-              : "Demo reader: no AI key set, so a fixed sample page is used. Add a Groq or Gemini key under Settings below."}{" "}
-              Need a page to photograph? Open the <a href="sample-ledger.html" target="_blank" rel="noopener">sample ledger page</a>.</p>
-            {photo && <img className="photo" src={photo} alt="Photo of the ledger page" />}
-          </div>
-          <PhoneHint />
-          <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && aiOn}>Read this page</button>
-            <button className="btn ghost" onClick={addRow}>Add a row by hand</button></div>
-          <p className="note" role="status" aria-live="polite">{msg}</p>
-          {failed && <div className="btn-row"><button className="btn" onClick={onSample}>Use the sample reading instead</button></div>}
-        </div>
-        <div>
-          {rows && (
-            <div className="sheet ledger">
-              <h2 style={{ marginTop: 0 }}>Check before saving</h2>
-              <div className="tablewrap"><table>
-                <thead><tr><th scope="col">Date</th><th scope="col">Part</th><th scope="col">In</th><th scope="col">Out</th><th scope="col">By</th></tr></thead>
-                <tbody>
-                  {rows.map((r, i) => {
-                    const unsure = r.confidence < 0.7;
-                    return (
-                      <tr key={i} className={unsure ? "unsure" : ""}>
-                        <td><input aria-label={`Date row ${i + 1}`} value={r.date || ""} onChange={(e) => edit(i, "date", e.target.value)} /></td>
-                        <td>
-                          <select aria-label={`Part row ${i + 1}`} value={r.pid} onChange={(e) => edit(i, "pid", e.target.value)}>{PART_OPTIONS}</select>
-                          {unsure && <div className="note">⚠ Unsure, read as “{r.raw_text || r.part}”</div>}
-                        </td>
-                        <td><input type="number" min="0" aria-label={`Quantity in row ${i + 1}`} value={+r.qty_in || 0} onChange={(e) => edit(i, "qty_in", +e.target.value)} /></td>
-                        <td><input type="number" min="0" aria-label={`Quantity out row ${i + 1}`} value={+r.qty_out || 0} onChange={(e) => edit(i, "qty_out", +e.target.value)} /></td>
-                        <td><input aria-label={`Initials row ${i + 1}`} value={r.initials || ""} style={{ maxWidth: 70 }} onChange={(e) => edit(i, "initials", e.target.value)} /></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table></div>
-              <div className="btn-row"><button className="btn" onClick={onSave}>Save {rows.length} entries</button></div>
+      {!rows ? (
+        <div className="grid2">
+          <div>
+            <div className="drop">
+              {camOn ? <Camera onShot={(d) => { setPhoto(d); setCamOn(false); }} onClose={() => setCamOn(false)} /> : (
+                <div className="btn-row" style={{ justifyContent: "center", marginTop: 0 }}>
+                  <button className="btn" onClick={() => setCamOn(true)}>Use camera</button>
+                  <label className="btn ghost" htmlFor="photo">Choose a picture or PDF</label>
+                </div>
+              )}
+              <input id="photo" type="file" accept="image/*,application/pdf,.pdf" className="sr" onChange={onFile} />
+              <p className="note">{aiOn
+                ? `Reading with ${PROVIDERS[provider].label.split(" (")[0]} when online.`
+                : "Demo reader: no AI key set, so a fixed sample page is used. Add a Groq or Gemini key under Settings below."}{" "}
+                Need a page to photograph? Open the <a href="sample-ledger.html" target="_blank" rel="noopener">sample ledger page</a>.</p>
+              {photo && <img className="photo" src={photo} alt="Photo of the ledger page" />}
             </div>
-          )}
+            <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && aiOn}>Read this page</button>
+              <button className="btn ghost" onClick={addRow}>Type entries by hand</button></div>
+            <p className="note" role="status" aria-live="polite">{msg}</p>
+            {failed && <div className="btn-row"><button className="btn" onClick={onSample}>Use the sample reading instead</button></div>}
+          </div>
+          <div><PhoneHint /></div>
         </div>
-      </div>
+      ) : (
+        <section className="review" aria-labelledby="reviewH">
+          {photo && (
+            <figure className="review-photo">
+              <img src={photo} alt="The ledger page you photographed" />
+              <figcaption className="note">Compare each row with the page.</figcaption>
+            </figure>
+          )}
+          <div>
+            <h2 id="reviewH" style={{ marginTop: 0 }}>Check before saving</h2>
+            <p className="note" role="status" aria-live="polite">{msg || "Change anything that is wrong. Nothing is saved until you tap Save."}</p>
+            <ol className="rowcards">
+              {rows.map((r, i) => <RowCard key={i} r={r} i={i} edit={edit} remove={removeRow} />)}
+            </ol>
+            <div className="btn-row">
+              <button className="btn ghost" onClick={addRow}>+ Add a row</button>
+            </div>
+            {saveErr && <p className="warnline" role="alert">{saveErr}</p>}
+            <div className="btn-row savebar">
+              <button className="btn" onClick={onSave} disabled={!rows.length}>Save {rows.length} {rows.length === 1 ? "entry" : "entries"}</button>
+              <button className="btn ghost" onClick={() => { setRows(null); setMsg(""); setSaveErr(""); }}>Discard and read another page</button>
+            </div>
+          </div>
+        </section>
+      )}
       <details style={{ marginTop: 24 }}>
         <summary>Settings</summary>
         <label className="f" htmlFor="provIn">Who reads the photo</label>
@@ -229,4 +232,58 @@ async function pdfToImage(file) {
   // "print" intent renders without requestAnimationFrame, so it also finishes in a background tab.
   await page.render({ canvasContext: ctx, viewport, intent: "print" }).promise;
   return cv.toDataURL("image/jpeg", 0.9);
+}
+
+// One ledger row as an editable card: part, in/out steppers, date, initials.
+function RowCard({ r, i, edit, remove }) {
+  const n = i + 1;
+  const unsure = r.confidence < 0.7 && !r.checked;
+  const net = (+r.qty_in || 0) - (+r.qty_out || 0);
+  const effect = !r.pid ? "Choose a part" : net > 0 ? `Adds ${net} to stock` : net < 0 ? `Takes ${-net} out of stock` : "No change to stock";
+  return (
+    <li className={"rowcard" + (unsure ? " unsure" : "") + (!r.pid ? " nopart" : "")} aria-label={`Row ${n}`}>
+      <div className="rowhead">
+        <span className="rownum">Row {n}</span>
+        {r.added ? <span className="badge b-grey">Added by hand</span>
+          : unsure ? <span className="badge b-warn">⚠ Check this row</span>
+          : <span className="badge b-ok">✓ {r.checked ? "Checked" : "Looks right"}</span>}
+        <button className="linkbtn rowremove" onClick={() => remove(i)} aria-label={`Remove row ${n}`}>Remove</button>
+      </div>
+      {!r.added && (r.raw_text || unsure) && <p className="readas">Read from the page as: “{r.raw_text || r.part}”</p>}
+      <div className="rowfields">
+        <label className="fld part">
+          <span>Part</span>
+          <select value={r.pid} onChange={(e) => edit(i, "pid", e.target.value)}>
+            {!r.pid && <option value="">Choose a part…</option>}
+            {PART_OPTIONS}
+          </select>
+        </label>
+        <Stepper label="In" n={n} value={+r.qty_in || 0} onChange={(v) => edit(i, "qty_in", v)} />
+        <Stepper label="Out" n={n} value={+r.qty_out || 0} onChange={(v) => edit(i, "qty_out", v)} />
+        <label className="fld">
+          <span>Date</span>
+          <input type="date" value={/^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : ""} onChange={(e) => edit(i, "date", e.target.value)} />
+        </label>
+        <label className="fld by">
+          <span>Written by</span>
+          <input value={r.initials || ""} maxLength={6} placeholder="Initials" onChange={(e) => edit(i, "initials", e.target.value.toUpperCase())} />
+        </label>
+      </div>
+      <p className={"effect" + (net ? "" : " none")}>{effect}</p>
+    </li>
+  );
+}
+
+// Big minus / plus buttons for gloved hands, with a number field in between.
+function Stepper({ label, n, value, onChange }) {
+  return (
+    <div className="fld stepper" role="group" aria-label={`${label}, row ${n}`}>
+      <span>{label}</span>
+      <div>
+        <button type="button" onClick={() => onChange(Math.max(0, value - 1))} aria-label={`${label} minus one`} disabled={value <= 0}>−</button>
+        <input type="number" inputMode="numeric" min="0" value={value} aria-label={`${label} quantity`} onChange={(e) => onChange(Math.max(0, +e.target.value || 0))} />
+        <button type="button" onClick={() => onChange(value + 1)} aria-label={`${label} plus one`}>+</button>
+      </div>
+    </div>
+  );
 }
