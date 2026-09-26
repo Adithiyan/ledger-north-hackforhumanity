@@ -31,14 +31,37 @@ function findPart(part, community) {
 function Welcome() {
   if (store.getPref("welcomed")) return null;
   return (
-    <div className="welcome" role="region" aria-label="Welcome">
-      <p><strong>Water in Nunavik arrives by truck.</strong> When a truck part breaks, a community can go weeks without water, even if the part sits in the next village's paper ledger.</p>
-      <p>Ledger North turns each garage's paper ledger into a digital one, and puts every community's ledger in one place. <span className="badge b-grey">Demo · sample data</span></p>
+    <section className="welcome" aria-labelledby="welcomeH">
+      <p className="eyebrow">Water in Nunavik · Hack for Humanity 2026 · <span className="badge b-grey">Demo with sample data</span></p>
+      <h2 id="welcomeH">When a water truck or plant part breaks, a community can go weeks without water. The spare part may sit in the next village, in a paper ledger no one else can see.</h2>
+      <ol className="how">
+        <li>
+          <span className="how-n" aria-hidden="true">1</span>
+          <strong>Digitize the ledger</strong>
+          <span>Staff keep writing on paper. A phone photo is read by AI into entries they check before saving.</span>
+          <a href="#snap">Snap ledger</a>
+        </li>
+        <li>
+          <span className="how-n" aria-hidden="true">2</span>
+          <strong>Centralize the ledgers</strong>
+          <span>Every community's stock in one place, shared by choice, so everyone sees what is there and what is missing.</span>
+          <a href="#home" onClick={() => document.getElementById("missH")?.scrollIntoView()}>See this dashboard</a>
+        </li>
+        <li>
+          <span className="how-n" aria-hidden="true">3</span>
+          <strong>Get the part moving</strong>
+          <span>Find the nearest community that has it, request it, and track it on the next cargo flight until it is received.</span>
+          <a href="#find">Find a part</a>
+        </li>
+      </ol>
+      <p className="criteria" aria-label="Built for the North">
+        <span>✓ Works offline</span><span>✓ Low bandwidth</span><span>✓ No new habits: paper stays</span><span>✓ Community-owned data</span><span>✓ Large text and touch targets</span>
+      </p>
       <div className="btn-row">
-        <a className="btn" href="#guide">How it works</a>
-        <button className="btn ghost" onClick={() => store.setPref("welcomed", "1")}>Hide</button>
+        <a className="btn" href="#guide">Try the 60-second demo</a>
+        <button className="btn ghost" onClick={() => store.setPref("welcomed", "1")}>Hide this</button>
       </div>
-    </div>
+    </section>
   );
 }
 

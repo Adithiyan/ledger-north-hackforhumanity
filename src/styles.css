@@ -161,3 +161,14 @@ h2{letter-spacing:-.005em}
 .field,td input,td select{border-color:#7A8C99;border-radius:8px}
 .roadmap{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .roadmap ul{margin:.6em 0 0;padding-left:1.1em}.roadmap li{margin:.35em 0}
+/* Welcome: problem + how we solve it */
+.welcome{padding:18px 18px 14px;border:1px solid var(--rule);border-top:4px solid var(--ink);border-radius:12px;margin-bottom:16px}
+.welcome h2{font-size:1.15rem;line-height:1.4;margin:.3em 0 .8em;max-width:70ch}
+.eyebrow{margin:0;color:var(--ink-soft);font-size:.85rem;font-weight:700}
+.how{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.how li{display:flex;flex-direction:column;gap:4px;background:var(--paper);border-radius:10px;padding:12px 14px}
+.how li span:not(.how-n){color:var(--ink-soft);font-size:.92rem}
+.how li a{margin-top:auto;padding-top:6px;font-weight:700;min-height:44px;display:flex;align-items:center}
+.how-n{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.criteria{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.criteria span{background:var(--ok-bg);color:var(--ok);border-radius:999px;padding:3px 10px;font-size:.85rem;font-weight:700}
