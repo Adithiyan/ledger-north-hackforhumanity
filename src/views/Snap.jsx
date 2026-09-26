@@ -13,6 +13,7 @@ export default function Snap() {
   const [rows, setRows] = useState(null);
   const [msg, setMsg] = useState("");
   const [camOn, setCamOn] = useState(false);
+  const [failed, setFailed] = useState(false);
   // Saved reader settings (per provider), and the draft being edited in Settings.
   const provider = store.getPref("provider") || "demo";
   const key = store.getPref("key:" + provider) || "";
@@ -34,15 +35,23 @@ export default function Snap() {
     const r = new FileReader(); r.onload = () => setPhoto(r.result); r.readAsDataURL(f);
   }
 
+  // Fallback when the AI service fails (limit reached, network down), so the demo never dead-ends.
+  async function onSample() {
+    setFailed(false); setMsg("Reading the sample page…");
+    const out = await readPage(null, { provider: "demo" });
+    setRows(out); setMsg(`Found ${out.length} rows (sample reading). Check the highlighted ones.`);
+  }
+
   async function onRead() {
+    setFailed(false);
     if (!store.getDevice().online) { setMsg("Photo saved on this device. It will be read when you are back online."); return; }
     setMsg(aiOn ? `Reading the page with ${PROVIDERS[provider].label.split(" (")[0]}…` : "Reading the sample page…");
     try {
       const out = await readPage(photo, { provider, key, model });
       setRows(out); setMsg(`Found ${out.length} rows${aiOn ? "" : " (demo reader: fixed sample page)"}. Check the highlighted ones.`);
     } catch (err) {
-      setMsg("Could not read the page: " + err.message + " You can add rows by hand instead.");
-      setRows([{ date: new Date().toISOString().slice(0, 10), part: "", qty_in: 0, qty_out: 0, initials: "", confidence: 0, pid: "P01" }]);
+      setMsg("Could not read the page: " + err.message + " Use the sample reading or add rows by hand.");
+      setFailed(true);
     }
   }
 
@@ -99,6 +108,7 @@ export default function Snap() {
           <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && aiOn}>Read this page</button>
             <button className="btn ghost" onClick={addRow}>Add a row by hand</button></div>
           <p className="note" role="status" aria-live="polite">{msg}</p>
+          {failed && <div className="btn-row"><button className="btn" onClick={onSample}>Use the sample reading instead</button></div>}
         </div>
         <div>
           {rows && (
