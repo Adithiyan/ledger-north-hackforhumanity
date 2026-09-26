@@ -13,6 +13,18 @@ function readJSON(k) { try { return JSON.parse(read(k) || "null"); } catch { ret
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
+// One-time demo link: "#gk=KEY" saves a Groq key on this device, then strips it from the address bar.
+// The part after # is never sent to any server, and the key is never in the repo.
+{
+  const m = location.hash.match(/[#&]gk=([^&]+)/);
+  if (m) {
+    write("ln:provider", "groq");
+    write("ln:key:groq", decodeURIComponent(m[1]));
+    const h = location.hash.replace(/[#&]gk=[^&]+/, "").replace(/^#?&?/, "#");
+    history.replaceState(null, "", location.pathname + location.search + (h === "#" ? "" : h));
+  }
+}
+
 let AS = new URLSearchParams(location.search).get("as") || read("ln:lastAs") || "Inukjuak"; // community or "region"
 const dkey = () => "ln:dev:" + AS;
 

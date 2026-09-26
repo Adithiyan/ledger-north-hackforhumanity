@@ -1,5 +1,5 @@
 // F2 Snap ledger → confirm → save.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as store from "../store/store.js";
 import { PROVIDERS, readPage } from "../ai/readLedger.js";
 import { toast } from "../toast.js";
@@ -12,6 +12,7 @@ export default function Snap() {
   const [photo, setPhoto] = useState(null);
   const [rows, setRows] = useState(null);
   const [msg, setMsg] = useState("");
+  const [camOn, setCamOn] = useState(false);
   // Saved reader settings (per provider), and the draft being edited in Settings.
   const provider = store.getPref("provider") || "demo";
   const key = store.getPref("key:" + provider) || "";
@@ -81,14 +82,20 @@ export default function Snap() {
       <div className="grid2">
         <div>
           <div className="drop">
-            <label className="btn" htmlFor="photo" style={{ display: "inline-block" }}>Take or choose a photo</label>
-            <input id="photo" type="file" accept="image/*" capture="environment" className="sr" onChange={onFile} />
+            {camOn ? <Camera onShot={(d) => { setPhoto(d); setCamOn(false); }} onClose={() => setCamOn(false)} /> : (
+              <div className="btn-row" style={{ justifyContent: "center", marginTop: 0 }}>
+                <button className="btn" onClick={() => setCamOn(true)}>Use camera</button>
+                <label className="btn ghost" htmlFor="photo">Choose a picture</label>
+              </div>
+            )}
+            <input id="photo" type="file" accept="image/*" className="sr" onChange={onFile} />
             <p className="note">{aiOn
               ? `Reading with ${PROVIDERS[provider].label.split(" (")[0]} when online.`
               : "Demo reader: no AI key set, so a fixed sample page is used. Add a Groq or Gemini key under Settings below."}{" "}
               Need a page to photograph? Open the <a href="sample-ledger.html" target="_blank" rel="noopener">sample ledger page</a>.</p>
             {photo && <img className="photo" src={photo} alt="Photo of the ledger page" />}
           </div>
+          <PhoneHint />
           <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && aiOn}>Read this page</button>
             <button className="btn ghost" onClick={addRow}>Add a row by hand</button></div>
           <p className="note" role="status" aria-live="polite">{msg}</p>
@@ -143,5 +150,48 @@ export default function Snap() {
         </div>
       </details>
     </>
+  );
+}
+
+// Live camera (laptop webcam or phone camera). Falls back to the file picker if no camera is allowed.
+function Camera({ onShot, onClose }) {
+  const video = useRef(null);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    let stream;
+    navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } })
+      .then((s) => { stream = s; if (video.current) video.current.srcObject = s; })
+      .catch(() => setErr("No camera available or permission was denied. Use “Choose a picture” instead."));
+    if (!navigator.mediaDevices) setErr("This browser cannot open the camera. Use “Choose a picture” instead.");
+    return () => stream?.getTracks().forEach((t) => t.stop());
+  }, []);
+  function shoot() {
+    const v = video.current; if (!v || !v.videoWidth) return;
+    const cv = document.createElement("canvas"); cv.width = v.videoWidth; cv.height = v.videoHeight;
+    cv.getContext("2d").drawImage(v, 0, 0); onShot(cv.toDataURL("image/jpeg", 0.9));
+  }
+  return (
+    <div>
+      {err ? <p className="note" role="alert">{err}</p>
+        : <video ref={video} autoPlay playsInline muted className="photo" style={{ width: "100%", margin: "0 auto 10px" }} aria-label="Camera preview" />}
+      <div className="btn-row" style={{ justifyContent: "center" }}>
+        {!err && <button className="btn" onClick={shoot}>Capture page</button>}
+        <button className="btn ghost" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// Suggest the phone: scan to open this page there and photograph a real ledger page.
+function PhoneHint() {
+  const url = location.origin + location.pathname + "#snap";
+  return (
+    <details className="phone-hint">
+      <summary>Better on a phone: scan to open Ledger North there</summary>
+      <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+        <img src={"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=" + encodeURIComponent(url)} width="140" height="140" alt={"QR code linking to " + url} />
+        <p className="note" style={{ flex: "1 1 180px", margin: 0 }}>Open this on your phone, tap <em>Use camera</em>, and photograph the <a href="sample-ledger.html" target="_blank" rel="noopener">sample ledger page</a> on this screen or on paper.</p>
+      </div>
+    </details>
   );
 }
