@@ -1,7 +1,7 @@
 // F2 Snap ledger → confirm → save.
 import { useState } from "react";
 import * as store from "../store/store.js";
-import { readPage } from "../ai/readLedger.js";
+import { PROVIDERS, readPage } from "../ai/readLedger.js";
 import { toast } from "../toast.js";
 import { t } from "../i18n.js";
 import { PART_OPTIONS } from "./common.jsx";
@@ -12,9 +12,14 @@ export default function Snap() {
   const [photo, setPhoto] = useState(null);
   const [rows, setRows] = useState(null);
   const [msg, setMsg] = useState("");
-  const [keyIn, setKeyIn] = useState(store.getPref("key") || "");
-  const [modelIn, setModelIn] = useState(store.getPref("model") || "gemini-2.5-flash");
-  const key = store.getPref("key");
+  // Saved reader settings (per provider), and the draft being edited in Settings.
+  const provider = store.getPref("provider") || "demo";
+  const key = store.getPref("key:" + provider) || "";
+  const model = store.getPref("model:" + provider) || PROVIDERS[provider].model;
+  const aiOn = provider !== "demo" && !!key;
+  const [provIn, setProvIn] = useState(provider);
+  const [keyIn, setKeyIn] = useState(key);
+  const [modelIn, setModelIn] = useState(model || "");
 
   if (as === "region") return (
     <>
@@ -30,10 +35,10 @@ export default function Snap() {
 
   async function onRead() {
     if (!store.getDevice().online) { setMsg("Photo saved on this device. It will be read when you are back online."); return; }
-    setMsg("Reading the page…");
+    setMsg(aiOn ? `Reading the page with ${PROVIDERS[provider].label.split(" (")[0]}…` : "Reading the sample page…");
     try {
-      const out = await readPage(photo, { key, model: store.getPref("model") });
-      setRows(out); setMsg(`Found ${out.length} rows. Check the highlighted ones.`);
+      const out = await readPage(photo, { provider, key, model });
+      setRows(out); setMsg(`Found ${out.length} rows${aiOn ? "" : " (demo reader: fixed sample page)"}. Check the highlighted ones.`);
     } catch (err) {
       setMsg("Could not read the page: " + err.message + " You can add rows by hand instead.");
       setRows([{ date: new Date().toISOString().slice(0, 10), part: "", qty_in: 0, qty_out: 0, initials: "", confidence: 0, pid: "P01" }]);
@@ -53,9 +58,21 @@ export default function Snap() {
   }
 
   function onSaveSettings() {
-    store.setPref("key", keyIn.trim()); store.setPref("model", modelIn.trim() || "gemini-2.5-flash");
+    store.setPref("provider", provIn);
+    if (provIn !== "demo") {
+      store.setPref("key:" + provIn, keyIn.trim());
+      store.setPref("model:" + provIn, modelIn.trim() || PROVIDERS[provIn].model);
+    }
     toast("Settings saved on this device.");
   }
+
+  function pickProvider(p) {
+    setProvIn(p);
+    setKeyIn(store.getPref("key:" + p) || "");
+    setModelIn(store.getPref("model:" + p) || PROVIDERS[p].model || "");
+  }
+
+  const addRow = () => setRows((rs) => [...(rs || []), { date: new Date().toISOString().slice(0, 10), part: "", qty_in: 0, qty_out: 0, initials: "", confidence: 1, pid: "P01" }]);
 
   return (
     <>
@@ -66,10 +83,14 @@ export default function Snap() {
           <div className="drop">
             <label className="btn" htmlFor="photo" style={{ display: "inline-block" }}>Take or choose a photo</label>
             <input id="photo" type="file" accept="image/*" capture="environment" className="sr" onChange={onFile} />
-            <p className="note">{key ? "Reading with AI when online." : "Demo reader: no AI key set, so a sample reading is used. Add a key under Settings below."}</p>
+            <p className="note">{aiOn
+              ? `Reading with ${PROVIDERS[provider].label.split(" (")[0]} when online.`
+              : "Demo reader: no AI key set, so a fixed sample page is used. Add a Groq or Gemini key under Settings below."}{" "}
+              Need a page to photograph? Open the <a href="sample-ledger.html" target="_blank" rel="noopener">sample ledger page</a>.</p>
             {photo && <img className="photo" src={photo} alt="Photo of the ledger page" />}
           </div>
-          <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && !!key}>Read this page</button></div>
+          <div className="btn-row"><button className="btn" onClick={onRead} disabled={!photo && aiOn}>Read this page</button>
+            <button className="btn ghost" onClick={addRow}>Add a row by hand</button></div>
           <p className="note" role="status" aria-live="polite">{msg}</p>
         </div>
         <div>
@@ -103,10 +124,18 @@ export default function Snap() {
       </div>
       <details style={{ marginTop: 24 }}>
         <summary>Settings</summary>
-        <label className="f" htmlFor="keyIn">AI key (stays on this device only)</label>
-        <input className="field" id="keyIn" type="password" value={keyIn} placeholder="Gemini API key" onChange={(e) => setKeyIn(e.target.value)} />
-        <label className="f" htmlFor="modelIn">Model</label>
-        <input className="field" id="modelIn" value={modelIn} onChange={(e) => setModelIn(e.target.value)} />
+        <label className="f" htmlFor="provIn">Who reads the photo</label>
+        <select className="field" id="provIn" value={provIn} onChange={(e) => pickProvider(e.target.value)}>
+          {Object.entries(PROVIDERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+        {provIn !== "demo" && (
+          <>
+            <label className="f" htmlFor="keyIn">API key (stays on this device only, never uploaded to the repo)</label>
+            <input className="field" id="keyIn" type="password" autoComplete="off" value={keyIn} placeholder={provIn === "groq" ? "gsk_…" : "Gemini API key"} onChange={(e) => setKeyIn(e.target.value)} />
+            <label className="f" htmlFor="modelIn">Model</label>
+            <input className="field" id="modelIn" value={modelIn} onChange={(e) => setModelIn(e.target.value)} />
+          </>
+        )}
         <p className="note">Only photograph sample pages during the demo. Free AI tiers may use content to improve their products; real community data should use a no-training plan or a model hosted in Nunavik.</p>
         <div className="btn-row">
           <button className="btn ghost" onClick={onSaveSettings}>Save settings</button>

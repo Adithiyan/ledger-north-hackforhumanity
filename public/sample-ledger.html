@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample Ledger Page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&family=Reenie+Beanie&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#1B3A4B; --rule:#9DB8CC; --margin:#D9534F; --pen:#1d2f8a; --paper:#FFFDF6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E9ECEE; font-family: "Atkinson Hyperlegible", sans-serif; color: var(--ink); }
+  .bar { max-width: 820px; margin: 0 auto; padding: 16px; font-size: 16px; line-height: 1.5; }
+  .bar button { font: inherit; min-height: 44px; padding: 8px 16px; border: 2px solid var(--ink); background: #fff; border-radius: 6px; cursor: pointer; margin-right: 8px; }
+  .page { max-width: 820px; margin: 0 auto 24px; background: var(--paper); padding: 28px 28px 40px 70px; position: relative;
+          box-shadow: 0 2px 10px rgba(0,0,0,.15); background-image: repeating-linear-gradient(var(--paper) 0 51px, var(--rule) 51px 52px); background-position: 0 118px; }
+  .page::before { content: ""; position: absolute; top: 0; bottom: 0; left: 52px; border-left: 2px solid var(--margin); }
+  .head { font-weight: 700; font-size: 20px; height: 90px; }
+  .head small { display: block; font-weight: 400; font-size: 14px; color: #55707f; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 14px; height: 28px; color: #55707f; text-transform: uppercase; letter-spacing: .04em; }
+  td { height: 52px; font-family: "Caveat", cursive; font-size: 30px; color: var(--pen); vertical-align: bottom; padding: 0 6px 4px 0; }
+  td.messy { font-family: "Reenie Beanie", cursive; font-size: 32px; transform: rotate(-2deg); display: inline-block; opacity: .8; }
+  .strike { text-decoration: line-through; text-decoration-thickness: 2px; }
+  @media print { body { background: #fff; } .bar { display: none; } .page { box-shadow: none; margin: 0; page-break-after: always; } }
+  @media (prefers-color-scheme: dark) { body { background: #1c2327; } .bar { color: #e6edf1; } .bar button { background: #2a3339; color: #e6edf1; border-color: #e6edf1; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>Sample ledger page for the Ledger North demo.</strong> This is made-up sample data written by the team, not a real community record.
+  Photograph this screen with a phone, or print it. Page 2 is a blank page to fill in by hand.
+  <p><button onclick="print()">Print both pages</button><a href="./">Back to Ledger North</a></p>
+</div>
+
+<section class="page" aria-label="Sample filled ledger page">
+  <div class="head">Inukjuak Municipal Garage: Spare Parts Ledger<small>Page 14 · Sample page for demo</small></div>
+  <table>
+    <thead><tr><th style="width:16%">Date</th><th>Part</th><th style="width:9%">In</th><th style="width:9%">Out</th><th style="width:10%">By</th></tr></thead>
+    <tbody>
+      <tr><td>Sept 24</td><td>Tank heater element</td><td>4</td><td></td><td>JK</td></tr>
+      <tr><td>Sept 25</td><td>Hydraulic hose kit</td><td></td><td>1</td><td>MA</td></tr>
+      <tr><td>Sept 25</td><td>Water pump</td><td></td><td>1</td><td>MA</td></tr>
+      <tr><td>Sept 26</td><td><span class="messy">Filtr cartrdg</span></td><td><span class="messy">6</span></td><td></td><td>JK</td></tr>
+      <tr><td>Sept 26</td><td><span class="strike">UV lamp</span></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="page" aria-label="Blank ledger page to fill in by hand">
+  <div class="head">Spare Parts Ledger: ____________ Garage<small>Page ____</small></div>
+  <table>
+    <thead><tr><th style="width:16%">Date</th><th>Part</th><th style="width:9%">In</th><th style="width:9%">Out</th><th style="width:10%">By</th></tr></thead>
+    <tbody>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

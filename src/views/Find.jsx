@@ -1,7 +1,7 @@
 // F5 Find a part + transfer request + approve. Ranked by estimated arrival by air, not km.
 import { useEffect, useState } from "react";
 import * as store from "../store/store.js";
-import { COMMUNITIES, CONNECTIVITY, HUBS, PARTS } from "../data/seed.js";
+import { COMMUNITIES, CONNECTIVITY, HUBS, PARTS, SEA_ONLY } from "../data/seed.js";
 import { C, DAY, ago, estArrivalDays, km, lastSeen, sharing, stock } from "../store/derive.js";
 import { isHighRisk, loadWeather, riskOf } from "../weather.js";
 import { myCommunity, FocusSelect, PART_OPTIONS } from "./common.jsx";
@@ -67,7 +67,7 @@ export default function Find() {
             {PART_OPTIONS}
           </select>
           <div className="sheet" style={{ marginTop: 14 }}>
-            <strong>{me}</strong>: {mine.q} {PARTS[part].toLowerCase()} in stock<br />
+            <strong>{me}</strong>: {mine.q} {PARTS[part]} in stock<br />
             <span className="note">Updated {ago(mine.last)}</span>
           </div>
           <h2>Weather at {me}, next 3 days</h2>
@@ -109,19 +109,53 @@ export default function Find() {
           {incoming.length > 0 && (
             <>
               <h2>Transfer requests</h2>
+              <p className="note">Parts travel as air cargo on the next scheduled passenger flight, the same way communities already ship freight. Shipping takes the part off the lender's ledger; receiving adds it to the requester's.</p>
               <ul className="list">
-                {incoming.map((r) => (
-                  <li key={r.id}>
-                    <span>{r.to} asks {r.from} for 1 {PARTS[r.part].toLowerCase()}<br /><span className="note">{ago(r.ts)} · {r.status || "Waiting for reply"}</span></span>
-                    {!r.status && (as === r.from || as === "region") &&
-                      <button className="btn ghost" onClick={() => { store.approveRequest(r.id); toast("Approved."); }}>Approve</button>}
-                  </li>
-                ))}
+                {incoming.map((r) => <Transfer key={r.id} r={r} as={as} />)}
               </ul>
             </>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+const STEPS = [["", "Requested"], ["approved", "Approved"], ["shipped", "Shipped"], ["received", "Received"]];
+// Older demo data stored a sentence as the status.
+const stepOf = (status) => (!status ? 0 : status === "received" ? 3 : status === "shipped" ? 2 : 1);
+
+function Transfer({ r, as }) {
+  const step = stepOf(r.status);
+  const lender = as === r.from || as === "region";
+  const requester = as === r.to || as === "region";
+  const part = PARTS[r.part];
+  const eta = estArrivalDays(r.from, r.to, r.part, isHighRisk);
+
+  function ship() {
+    store.addEvent({ type: "stock", community: r.from, part: r.part, delta: -1, reason: "transfer", by: `Sent to ${r.to}` });
+    store.setRequestStatus(r.id, "shipped"); toast(`Marked shipped. Removed 1 ${part} from ${r.from}'s ledger.`);
+  }
+  function receive() {
+    store.addEvent({ type: "stock", community: r.to, part: r.part, delta: 1, reason: "transfer", by: `Received from ${r.from}` });
+    store.setRequestStatus(r.id, "received"); toast(`Received. Added 1 ${part} to ${r.to}'s ledger.`);
+  }
+
+  return (
+    <li>
+      <span>
+        <strong>{r.to}</strong> asks <strong>{r.from}</strong> for 1 {part}<br />
+        <span className="steps-inline" aria-label={`Status: ${STEPS[step][1]}`}>
+          {STEPS.map(([, label], i) => <span key={label} className={i <= step ? "done" : ""}>{i <= step ? "✓ " : ""}{label}</span>)}
+        </span><br />
+        <span className="note">
+          {SEA_ONLY[r.part] ? "Too heavy for air cargo: plan with KRG or the sealift." : eta ? `Air cargo, ~${eta.days} day${eta.days > 1 ? "s" : ""}${eta.via.length ? ` via ${eta.via.join(", ")}` : ""}.` : ""}
+          {" "}Requested {ago(r.ts)}.
+        </span>
+      </span>
+      {step === 0 && lender && <button className="btn ghost" onClick={() => { store.setRequestStatus(r.id, "approved"); toast("Approved."); }}>Approve</button>}
+      {step === 1 && lender && <button className="btn ghost" onClick={ship}>Mark shipped</button>}
+      {step === 2 && requester && <button className="btn" onClick={receive}>Mark received</button>}
+    </li>
   );
 }

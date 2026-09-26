@@ -52,6 +52,7 @@ export default function App() {
   return (
     <>
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); mainRef.current?.focus(); }}>{t("skip")}</a>
+      <div className="topbar">
       <header className="strip">
         <div className="strip-row">
           <div className="brand">Ledger North<small>{as === "region" ? t("regional") : t("garage", as)}</small></div>
@@ -83,6 +84,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      </div>
       <main id="main" tabIndex={-1} ref={mainRef}>
         <View key={as} />
         <footer className="foot">

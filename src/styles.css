@@ -122,3 +122,15 @@ nav.tabs button span{text-align:center;line-height:1.15}
 .system span:not(.badge){color:var(--ink-soft);font-size:.9rem}
 tr.group th{background:var(--paper);color:var(--ink);font-size:.95rem;padding-top:14px}
 tbody[id]{scroll-margin-top:120px}
+/* One sticky bar: header + tabs (tabs move to the bottom on phones) */
+.topbar{position:sticky;top:0;z-index:6;box-shadow:0 2px 8px rgba(27,58,75,.12)}
+header.strip{position:static}
+nav.tabs button{transition:background .15s}
+nav.tabs button:hover{background:#E8EDF0}
+nav.tabs button[aria-current="page"]:hover{background:var(--ink)}
+@media(min-width:900px){
+  nav.tabs{position:static;max-width:none;background:var(--sheet);border-bottom:1px solid var(--rule);padding:8px max(16px,calc((100% - 1100px)/2 + 16px))}
+  nav.tabs button{font-weight:700}
+}
+.steps-inline{display:inline-flex;flex-wrap:wrap;gap:4px 10px;font-size:.9rem;color:var(--ink-soft)}
+.steps-inline .done{color:var(--ok);font-weight:700}

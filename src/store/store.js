@@ -30,7 +30,8 @@ export function onRemoteUpdate(fn) { remoteListeners.add(fn); return () => remot
 /* ---------- central + device ---------- */
 function central() {
   let c = readJSON(CKEY);
-  if (!c || c.v !== SEED_VERSION) {
+  // Only replace an OLDER seed. A tab still running old code must never wipe a newer seed.
+  if (!c || (c.v || 0) < SEED_VERSION) {
     // New or outdated demo seed: start fresh, and drop device copies of the old one.
     Object.keys(localStorage).filter((k) => k.startsWith("ln:dev:")).forEach((k) => localStorage.removeItem(k));
     c = { v: SEED_VERSION, events: seedEvents(uid) }; write(CKEY, JSON.stringify(c));
@@ -96,11 +97,12 @@ export function setOnline(on) {
   emit();
 }
 
-// MVP exception to append-only (SPEC §6 note): approval updates request status in place.
-export function approveRequest(id) {
+// MVP exception to append-only (SPEC §6 note): request status is updated in place.
+// Status goes approved → shipped → received. Stock moves are normal append-only events.
+export function setRequestStatus(id, status) {
   const c = central(); const r = c.events.find((e) => e.id === id);
   if (r) {
-    r.status = "Approved, shipping on next flight"; saveCentral(c);
+    r.status = status; saveCentral(c);
     const d = device(); d.cache = c.events; saveDev(d);
   }
   emit();
@@ -108,7 +110,7 @@ export function approveRequest(id) {
 
 export function resetDemo() {
   Object.keys(localStorage)
-    .filter((k) => k.startsWith("ln:") && k !== "ln:key" && k !== "ln:model")
+    .filter((k) => k.startsWith("ln:") && !/^ln:(key|model|provider)/.test(k))
     .forEach((k) => localStorage.removeItem(k));
   location.reload();
 }

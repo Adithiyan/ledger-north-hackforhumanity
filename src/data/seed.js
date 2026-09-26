@@ -80,7 +80,7 @@ export const FLIGHT_LEGS = [
 ];
 
 // Bump when the seed changes so browsers holding an older demo seed start fresh.
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 const DAY = 864e5;
 

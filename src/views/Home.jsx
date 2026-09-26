@@ -143,7 +143,7 @@ export default function Home() {
         <ul className="list">
           {entries.map((e) => (
             <li key={e.id}>
-              <span><strong>{e.reason === "count" ? `Counted ${e.delta}` : e.delta > 0 ? `+${e.delta} in` : `${-e.delta} out`}</strong> · {PARTS[e.part].toLowerCase()}<br /><span className="note">{e.by} · {ago(e.ts)}</span></span>
+              <span><strong>{e.reason === "count" ? `Counted ${e.delta}` : e.delta > 0 ? `+${e.delta} in` : `${-e.delta} out`}</strong> · {PARTS[e.part]}<br /><span className="note">{e.by} · {ago(e.ts)}</span></span>
             </li>
           ))}
         </ul>
