@@ -3,20 +3,20 @@ import { getPref, setPref } from "./store/store.js";
 
 const T = {
   en: {
-    board: "Region", snap: "Snap ledger", find: "Find a part", broke: "Breakdowns", plan: "Sealift plan", report: "Report",
+    home: "Overview", guide: "Guide", snap: "Snap ledger", find: "Find a part", broke: "Breakdowns", plan: "Sealift plan", report: "Report",
     online: "Online", offline: "Offline — saving on this device", waiting: (n) => `${n} waiting to sync`,
     regional: "KRG regional view", garage: (c) => `${c} municipal garage`,
     normal: "✓ Normal", reduced: "● Reduced", critical: "⚠ Critical",
-    boardTitle: "Water equipment across Nunavik", snapTitle: "Snap a ledger page", findTitle: "Find a part",
+    boardTitle: "Water trucks by community", homeTitle: (c) => `Spare parts at a glance: ${c}`, homeRegion: "Spare parts across Nunavik", guideTitle: "How Ledger North works", snapTitle: "Snap a ledger page", findTitle: "Find a part",
     brokeTitle: (c) => `Breakdowns in ${c}`, planTitle: (c) => `Sealift order for ${c}`, reportTitle: "Evidence report",
     skip: "Skip to content",
   },
   fr: {
-    board: "Région", snap: "Photo du registre", find: "Trouver une pièce", broke: "Pannes", plan: "Plan de ravitaillement", report: "Rapport",
+    home: "Aperçu", guide: "Guide", snap: "Photo du registre", find: "Trouver une pièce", broke: "Pannes", plan: "Plan de ravitaillement", report: "Rapport",
     online: "En ligne", offline: "Hors ligne — enregistré sur cet appareil", waiting: (n) => `${n} en attente de synchronisation`,
     regional: "Vue régionale ARK", garage: (c) => `Garage municipal de ${c}`,
     normal: "✓ Normal", reduced: "● Réduit", critical: "⚠ Critique",
-    boardTitle: "Équipement d'eau au Nunavik", snapTitle: "Photographier une page du registre", findTitle: "Trouver une pièce",
+    boardTitle: "Camions d'eau par communauté", homeTitle: (c) => `Pièces de rechange en bref : ${c}`, homeRegion: "Pièces de rechange au Nunavik", guideTitle: "Comment fonctionne Ledger North", snapTitle: "Photographier une page du registre", findTitle: "Trouver une pièce",
     brokeTitle: (c) => `Pannes à ${c}`, planTitle: (c) => `Commande de ravitaillement pour ${c}`, reportTitle: "Rapport de preuves",
     skip: "Aller au contenu",
   },

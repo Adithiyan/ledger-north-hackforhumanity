@@ -1,20 +1,20 @@
-// F1 Regional board.
+// F1 Regional board. Shown as a section of the Overview page.
 import * as store from "../store/store.js";
 import { COMMUNITIES } from "../data/seed.js";
 import { ago, isWaterTruck, openBreakdowns, sharing, trucksRunning, truckStatus } from "../store/derive.js";
 import { t } from "../i18n.js";
 
-const BADGE = { normal: "b-ok", reduced: "b-warn", critical: "b-bad" };
+export const BADGE = { normal: "b-ok", reduced: "b-warn", critical: "b-bad" };
 
 export default function Board() {
   const ev = store.getEvents(); const dev = store.getDevice(); const as = store.getAs();
   const order = [...COMMUNITIES].sort((a, b) => (b.name === as) - (a.name === as));
   return (
-    <>
-      <h1>{t("boardTitle")}</h1>
-      <p className="lede">
-        {dev.online ? "Live regional picture." : `You are offline. Showing the region as of your last sync, ${ago(dev.lastSync)}.`}{" "}
-        Truck counts and stock are sample data for the demo.
+    <section aria-labelledby="boardH">
+      <h2 id="boardH">{t("boardTitle")}</h2>
+      <p className="note">
+        Green blocks are trucks running; striped blocks are out of service. Critical means half or fewer are running.
+        {!dev.online && ` You are offline: this is the region as of your last sync, ${ago(dev.lastSync)}.`}
       </p>
       <div className="board">
         {order.map((c) => {
@@ -23,7 +23,7 @@ export default function Board() {
           return (
             <div key={c.name} className={"crow" + (c.name === as ? " mine" : "")}>
               <div>
-                <div className="cname">{c.name}</div>
+                <div className="cname">{c.name}{c.name === as && <span className="note"> (you)</span>}</div>
                 <div className="cmeta">Water trucks running: <strong>{run} of {c.water}</strong>{other && ` · Also down: ${other}`}</div>
                 <div className="trucks" aria-hidden="true">
                   {Array.from({ length: c.water }, (_, i) => (
@@ -39,6 +39,6 @@ export default function Board() {
           );
         })}
       </div>
-    </>
+    </section>
   );
 }

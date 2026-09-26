@@ -3,23 +3,25 @@ import * as store from "./store/store.js";
 import { COMMUNITIES } from "./data/seed.js";
 import { t, getLang, setLang } from "./i18n.js";
 import { onToast } from "./toast.js";
-import Board from "./views/Board.jsx";
+import Home from "./views/Home.jsx";
 import Snap from "./views/Snap.jsx";
 import Find from "./views/Find.jsx";
 import Breakdowns from "./views/Breakdowns.jsx";
 import Plan from "./views/Plan.jsx";
 import Report from "./views/Report.jsx";
+import Guide from "./views/Guide.jsx";
 
-const VIEWS = { board: Board, snap: Snap, find: Find, broke: Breakdowns, plan: Plan, report: Report };
+const VIEWS = { home: Home, snap: Snap, find: Find, broke: Breakdowns, plan: Plan, report: Report, guide: Guide };
 const ICON = {
-  board: <path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" />,
+  home: <path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" />,
   snap: <><path d="M4 7h3l2-3h6l2 3h3v13H4z" /><circle cx="12" cy="13" r="4" /></>,
   find: <><circle cx="10" cy="10" r="6" /><path d="M15 15l6 6" /></>,
   broke: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></>,
   plan: <path d="M3 17h18l-2 4H5zM6 17V9h12v8M9 9V5h6v4" />,
   report: <path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7" />,
+  guide: <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></>,
 };
-const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS[v] ? v : "board"; };
+const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS[v] ? v : "home"; };
 
 export default function App() {
   useSyncExternalStore(store.subscribe, store.getVersion);

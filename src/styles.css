@@ -90,3 +90,26 @@ label.f{display:block;font-weight:700;margin:12px 0 4px}
 pre.report{white-space:pre-wrap;font-family:inherit;background:#fff;border:1px solid var(--rule);border-radius:var(--radius-s);padding:14px;max-width:70ch}
 .sr{position:absolute;left:-999px;width:1px;height:1px;overflow:hidden}
 .warnline{color:var(--warn);font-size:.9rem}
+/* overview + guide */
+.welcome{background:var(--sheet);border:2px solid var(--ink);border-radius:var(--radius-l);padding:14px 16px;margin-bottom:8px}
+.welcome p{margin:.3em 0}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 4px}
+.tile{background:var(--sheet);border:1px solid var(--rule);border-left:6px solid var(--ok);border-radius:var(--radius-l);padding:12px 14px}
+.tile.warn{border-left-color:var(--warn)}.tile.bad{border-left-color:var(--bad)}
+.tile strong{display:block;font-size:1.7rem;line-height:1.1}
+.tile span{color:var(--ink-soft);font-size:.9rem}
+.steps li{margin:.5em 0}
+.gloss dt{font-weight:700;margin-top:.6em}.gloss dd{margin:0 0 0 0;color:var(--ink-soft)}
+main a{color:var(--focus)}
+main a.btn{color:#fff}main a.btn.ghost{color:var(--ink)}
+nav.tabs button span{text-align:center;line-height:1.15}
+@media(max-width:599px){
+  .brand small{display:none}
+  .controls{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:8px}
+  .controls #langSel{width:100%}
+  .controls select{min-width:0;width:100%}
+  .controls .conn{grid-column:1/-1;justify-content:center}
+  .controls .outbox{grid-column:1/-1;justify-content:center}
+  h1{font-size:1.35rem}
+}
