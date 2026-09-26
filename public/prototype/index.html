@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger North</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1B3A4B; --ink-soft:#4A6272; --paper:#F6F8F9; --sheet:#FFFFFF; --rule:#C9D8E3; --margin:#D9534F;
+  --ok:#23704A; --ok-bg:#E3F2EA; --warn:#8A5A00; --warn-bg:#FFF1CC; --bad:#A4231C; --bad-bg:#FBE4E2;
+  --focus:#0B63CE; --radius-s:6px; --radius-l:14px;
+  font-family:"Atkinson Hyperlegible", "Segoe UI", Verdana, sans-serif; font-size:18px; line-height:1.45; color:var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper)}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.skip{position:absolute;left:-999px}.skip:focus{left:8px;top:8px;background:#fff;padding:8px;z-index:9}
+
+/* status strip */
+header.strip{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px}
+.strip-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
+.brand{font-weight:700;font-size:1.15rem;letter-spacing:.01em}
+.brand small{display:block;font-weight:400;font-size:.8rem;opacity:.85}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.conn{display:flex;align-items:center;gap:8px;border:2px solid #fff;border-radius:999px;padding:6px 14px;background:transparent;color:#fff;cursor:pointer;min-height:44px}
+.conn[data-on="false"]{background:#fff;color:var(--bad);border-color:#fff}
+.dot{width:12px;height:12px;border-radius:50%;background:#7CDFA6}
+.conn[data-on="false"] .dot{background:var(--bad)}
+.outbox{background:var(--warn-bg);color:var(--warn);border-radius:999px;padding:6px 12px;font-weight:700;min-height:44px;display:flex;align-items:center}
+.outbox[hidden]{display:none}
+.strip select{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);border-radius:var(--radius-s);padding:6px 8px;min-height:44px}
+.strip select option{color:var(--ink)}
+
+main{max-width:1100px;margin:0 auto;padding:18px 16px}
+h1{font-size:1.6rem;margin:.2em 0 .1em}
+h2{font-size:1.2rem;margin:1.2em 0 .4em}
+p.lede{color:var(--ink-soft);margin:.2em 0 1em;max-width:62ch}
+.note{color:var(--ink-soft);font-size:.9rem}
+
+/* nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--sheet);border-top:1px solid var(--rule);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav.tabs button{flex:1;border:0;background:none;padding:8px 2px;min-height:56px;border-radius:var(--radius-s);font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button[aria-current="page"]{background:var(--ink);color:#fff}
+@media(min-width:900px){
+  body{padding-bottom:0}
+  nav.tabs{position:sticky;top:76px;bottom:auto;max-width:1100px;margin:0 auto;border:0;background:transparent;justify-content:flex-start;gap:6px;padding:10px 16px 0}
+  nav.tabs button{flex:0 0 auto;flex-direction:row;padding:8px 14px;min-height:44px;font-size:.95rem}
+}
+
+/* board */
+.board{display:grid;gap:10px}
+.crow{display:grid;grid-template-columns:1fr auto;gap:6px 14px;background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius-l);padding:14px 16px}
+.crow.mine{border:2px solid var(--ink)}
+.cname{font-weight:700;font-size:1.1rem}
+.cmeta{color:var(--ink-soft);font-size:.9rem}
+.trucks{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.truck{width:30px;height:20px;border-radius:4px;border:2px solid var(--ok);background:var(--ok)}
+.truck.down{background:repeating-linear-gradient(45deg,var(--bad-bg),var(--bad-bg) 4px,#fff 4px,#fff 8px);border-color:var(--bad)}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-warn{background:var(--warn-bg);color:var(--warn)}.b-bad{background:var(--bad-bg);color:var(--bad)}
+.b-grey{background:#E8EDF0;color:var(--ink-soft)}
+
+/* sheet = ledger paper */
+.sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius-l);padding:16px;position:relative}
+.ledger{background-image:repeating-linear-gradient(#fff 0 43px,var(--rule) 43px 44px);border-left:3px double var(--margin);padding-left:14px}
+table{border-collapse:collapse;width:100%}
+.tablewrap{overflow-x:auto}
+th,td{text-align:left;padding:10px 8px;vertical-align:middle;border-bottom:1px solid var(--rule)}
+th{font-size:.85rem;color:var(--ink-soft);font-weight:700}
+tr.unsure td{background:var(--warn-bg)}
+td input,td select{width:100%;min-height:44px;border:1px solid var(--rule);border-radius:var(--radius-s);padding:6px 8px;background:#fff}
+td input[type=number]{max-width:90px}
+
+.btn{border:2px solid var(--ink);background:var(--ink);color:#fff;border-radius:var(--radius-s);padding:10px 18px;min-height:48px;font-weight:700;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+label.f{display:block;font-weight:700;margin:12px 0 4px}
+.field{width:100%;min-height:48px;border:1px solid var(--ink-soft);border-radius:var(--radius-s);padding:8px 10px;background:#fff}
+.grid2{display:grid;gap:16px}
+@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+.photo{max-width:100%;max-height:320px;border-radius:var(--radius-s);border:1px solid var(--rule);display:block;margin-top:10px}
+.drop{border:2px dashed var(--ink-soft);border-radius:var(--radius-l);padding:22px;text-align:center;background:#fff}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule)}
+.wx{display:flex;gap:8px;flex-wrap:wrap}
+.wx div{border:1px solid var(--rule);border-radius:var(--radius-s);padding:8px 10px;background:#fff;min-width:110px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--radius-s);z-index:9;max-width:90vw}
+.toast[hidden]{display:none}
+@media(min-width:900px){.toast{bottom:24px}}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 4px #7CDFA6}100%{box-shadow:0 0 0 0 transparent}}
+pre.report{white-space:pre-wrap;font-family:inherit;background:#fff;border:1px solid var(--rule);border-radius:var(--radius-s);padding:14px;max-width:70ch}
+</style>
+</head>
+<body>
+<a href="#main" class="skip">Skip to content</a>
+<header class="strip">
+  <div class="strip-row">
+    <div class="brand">Ledger North<small id="whoami"></small></div>
+    <div class="controls">
+      <label class="sr" for="asSel" style="position:absolute;left:-999px">Device</label>
+      <select id="asSel" aria-label="Viewing as"></select>
+      <select id="langSel" aria-label="Language">
+        <option value="en">English</option><option value="fr">Français</option>
+        <option value="iu" disabled>ᐃᓄᒃᑎᑐᑦ (with community review)</option>
+      </select>
+      <span class="outbox" id="outbox" hidden role="status"></span>
+      <button class="conn" id="connBtn" data-on="true" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="connTxt"></span></button>
+    </div>
+  </div>
+</header>
+<nav class="tabs" aria-label="Sections" id="tabs"></nav>
+<main id="main" tabindex="-1"></main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+/* ---------- Embedded data (public reference + clearly SAMPLE values) ---------- */
+const EMBED = {"rates":{"Inukjuak":{"P01":[0.136,0.0],"P02":[0.364,0.091],"P03":[0.091,0.182],"P04":[0.273,0.0],"P05":[0.227,0.091],"P06":[0.136,0.0],"P07":[0.0,0.0],"P08":[0.545,0.364],"P09":[0.0,0.0],"P10":[0.182,0.182]},"Puvirnituq":{"P01":[0.091,0.091],"P02":[0.364,0.091],"P03":[0.455,0.273],"P04":[0.545,0.182],"P05":[0.227,0.136],"P06":[0.182,0.0],"P07":[0.045,0.0],"P08":[0.227,0.545],"P09":[0.0,0.0],"P10":[0.318,0.136]},"Akulivik":{"P01":[0.091,0.045],"P02":[0.136,0.091],"P03":[0.045,0.045],"P04":[0.227,0.045],"P05":[0.091,0.091],"P06":[0.045,0.0],"P07":[0.091,0.045],"P08":[0.5,0.455],"P09":[0.045,0.0],"P10":[0.045,0.0]},"Ivujivik":{"P01":[0.091,0.0],"P02":[0.273,0.045],"P03":[0.045,0.091],"P04":[0.227,0.0],"P05":[0.136,0.182],"P06":[0.0,0.045],"P07":[0.0,0.045],"P08":[0.545,0.455],"P09":[0.045,0.045],"P10":[0.045,0.0]},"Umiujaq":{"P01":[0.091,0.0],"P02":[0.227,0.091],"P03":[0.045,0.0],"P04":[0.182,0.045],"P05":[0.182,0.091],"P06":[0.0,0.0],"P07":[0.0,0.0],"P08":[0.409,0.227],"P09":[0.045,0.091],"P10":[0.0,0.045]},"Kuujjuarapik":{"P01":[0.0,0.0],"P02":[0.227,0.045],"P03":[0.136,0.045],"P04":[0.045,0.045],"P05":[0.091,0.136],"P06":[0.0,0.045],"P07":[0.0,0.0],"P08":[0.364,0.591],"P09":[0.045,0.091],"P10":[0.182,0.045]},"Salluit":{"P01":[0.136,0.045],"P02":[0.182,0.136],"P03":[0.136,0.045],"P04":[0.182,0.091],"P05":[0.273,0.273],"P06":[0.091,0.0],"P07":[0.0,0.0],"P08":[0.545,0.455],"P09":[0.091,0.0],"P10":[0.227,0.091]},"Kuujjuaq":{"P01":[0.136,0.091],"P02":[0.273,0.227],"P03":[0.318,0.091],"P04":[0.364,0.091],"P05":[0.136,0.273],"P06":[0.045,0.0],"P07":[0.0,0.0],"P08":[0.636,0.545],"P09":[0.045,0.0],"P10":[0.545,0.227]}},"inv":[["Inukjuak","P01",3,"2026-09-25"],["Inukjuak","P02",3,"2026-09-19"],["Inukjuak","P03",0,"2026-09-14"],["Inukjuak","P04",0,"2026-09-09"],["Inukjuak","P05",1,"2026-09-25"],["Inukjuak","P06",0,"2026-09-03"],["Inukjuak","P07",1,"2026-09-20"],["Inukjuak","P08",10,"2026-09-14"],["Inukjuak","P09",1,"2026-09-07"],["Inukjuak","P10",0,"2026-09-23"],["Puvirnituq","P01",3,"2026-09-01"],["Puvirnituq","P02",2,"2026-09-17"],["Puvirnituq","P03",0,"2026-09-17"],["Puvirnituq","P04",0,"2026-09-13"],["Puvirnituq","P05",3,"2026-09-07"],["Puvirnituq","P06",3,"2026-09-11"],["Puvirnituq","P07",1,"2026-09-12"],["Puvirnituq","P08",3,"2026-09-05"],["Puvirnituq","P09",1,"2026-09-21"],["Puvirnituq","P10",2,"2026-09-09"],["Akulivik","P01",1,"2026-09-18"],["Akulivik","P02",1,"2026-09-19"],["Akulivik","P03",1,"2026-09-20"],["Akulivik","P04",1,"2026-09-22"],["Akulivik","P05",1,"2026-09-25"],["Akulivik","P06",0,"2026-09-14"],["Akulivik","P07",2,"2026-09-18"],["Akulivik","P08",9,"2026-09-06"],["Akulivik","P09",1,"2026-09-18"],["Akulivik","P10",2,"2026-09-16"],["Ivujivik","P01",1,"2026-09-10"],["Ivujivik","P02",2,"2026-09-12"],["Ivujivik","P03",3,"2026-09-13"],["Ivujivik","P04",3,"2026-09-05"],["Ivujivik","P05",3,"2026-09-04"],["Ivujivik","P06",3,"2026-09-08"],["Ivujivik","P07",1,"2026-09-23"],["Ivujivik","P08",4,"2026-09-04"],["Ivujivik","P09",0,"2026-09-17"],["Ivujivik","P10",1,"2026-09-11"],["Umiujaq","P01",2,"2026-09-20"],["Umiujaq","P02",3,"2026-09-22"],["Umiujaq","P03",3,"2026-09-02"],["Umiujaq","P04",0,"2026-09-13"],["Umiujaq","P05",3,"2026-09-01"],["Umiujaq","P06",0,"2026-09-05"],["Umiujaq","P07",1,"2026-09-20"],["Umiujaq","P08",8,"2026-09-03"],["Umiujaq","P09",0,"2026-09-09"],["Umiujaq","P10",0,"2026-09-12"],["Kuujjuarapik","P01",0,"2026-09-20"],["Kuujjuarapik","P02",0,"2026-09-24"],["Kuujjuarapik","P03",1,"2026-09-13"],["Kuujjuarapik","P04",2,"2026-09-21"],["Kuujjuarapik","P05",2,"2026-09-10"],["Kuujjuarapik","P06",3,"2026-09-20"],["Kuujjuarapik","P07",0,"2026-09-25"],["Kuujjuarapik","P08",4,"2026-09-21"],["Kuujjuarapik","P09",1,"2026-09-15"],["Kuujjuarapik","P10",0,"2026-09-07"],["Salluit","P01",3,"2026-09-17"],["Salluit","P02",1,"2026-09-07"],["Salluit","P03",0,"2026-09-20"],["Salluit","P04",2,"2026-09-17"],["Salluit","P05",3,"2026-09-08"],["Salluit","P06",2,"2026-09-06"],["Salluit","P07",3,"2026-09-02"],["Salluit","P08",7,"2026-09-08"],["Salluit","P09",3,"2026-09-01"],["Salluit","P10",0,"2026-09-03"],["Kuujjuaq","P01",1,"2026-09-25"],["Kuujjuaq","P02",1,"2026-09-12"],["Kuujjuaq","P03",3,"2026-09-13"],["Kuujjuaq","P04",1,"2026-09-19"],["Kuujjuaq","P05",0,"2026-09-17"],["Kuujjuaq","P06",0,"2026-09-24"],["Kuujjuaq","P07",3,"2026-09-03"],["Kuujjuaq","P08",3,"2026-09-18"],["Kuujjuaq","P09",1,"2026-09-24"],["Kuujjuaq","P10",2,"2026-09-19"]]};
+const COMMUNITIES = [
+ {name:"Inukjuak",lat:58.454,lon:-78.103,water:6,sewage:3},
+ {name:"Puvirnituq",lat:60.031,lon:-77.287,water:5,sewage:3},
+ {name:"Akulivik",lat:60.809,lon:-78.199,water:2,sewage:1},
+ {name:"Ivujivik",lat:62.417,lon:-77.908,water:2,sewage:2},
+ {name:"Umiujaq",lat:56.553,lon:-76.550,water:2,sewage:1},
+ {name:"Kuujjuarapik",lat:55.282,lon:-77.765,water:3,sewage:2},
+ {name:"Salluit",lat:62.200,lon:-75.633,water:4,sewage:5},
+ {name:"Kuujjuaq",lat:58.100,lon:-68.400,water:5,sewage:4}];
+const PARTS = {P01:"Water delivery pump",P02:"Tank heater element",P03:"Hydraulic hose kit",P04:"Truck battery (cold-rated)",
+ P05:"Winter truck tire",P06:"Sewage vacuum pump",P07:"Chlorine dosing pump",P08:"Filter cartridge set",
+ P09:"Intake heat-trace cable",P10:"Home tank level switch"};
+const SEA_ONLY = {P05:true};
+const ORDER_BY = "2027-05-22"; // estimated from NEAS 2026 first-sailing packaging cut-off (May 22). Verify yearly.
+const DEFAULT_SHARING = {Inukjuak:true,Puvirnituq:true,Umiujaq:true};
+const NOW = Date.now(); const DAY = 864e5;
+
+/* ---------- i18n (EN/FR; Inuktitut to be written and reviewed by speakers) ---------- */
+const T = {
+ en:{board:"Region",snap:"Snap ledger",find:"Find a part",broke:"Breakdowns",plan:"Sealift plan",report:"Report",
+  online:"Online",offline:"Offline — saving on this device",waiting:n=>`${n} waiting to sync`,
+  regional:"KRG regional view",garage:c=>`${c} municipal garage`},
+ fr:{board:"Région",snap:"Photo du registre",find:"Trouver une pièce",broke:"Pannes",plan:"Plan de ravitaillement",report:"Rapport",
+  online:"En ligne",offline:"Hors ligne — enregistré sur cet appareil",waiting:n=>`${n} en attente de synchronisation`,
+  regional:"Vue régionale ARK",garage:c=>`Garage municipal de ${c}`}};
+let lang = localStorage.getItem("ln:lang")||"en";
+const t = k => (T[lang]||T.en)[k];
+
+/* ---------- Store: "central server" + this device (simulated with two tabs) ---------- */
+const params = new URLSearchParams(location.search);
+let AS = params.get("as") || localStorage.getItem("ln:lastAs") || "Inukjuak"; // community name or "region"
+const CKEY="ln:central", DKEY=()=>"ln:dev:"+AS;
+const uid = () => Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+
+function seed(){
+  const ev=[];
+  EMBED.inv.forEach(([c,p,q,d])=>ev.push({id:uid(),type:"stock",community:c,part:p,delta:q,reason:"count",by:"Ledger count",ts:Date.parse(d+"T12:00:00")}));
+  const b=(c,asset,part,daysAgo,fixedAfter)=>{const id=uid();ev.push({id,type:"breakdown",community:c,asset,part,ts:NOW-daysAgo*DAY,by:"Garage"});
+    if(fixedAfter!=null)ev.push({id:uid(),type:"fixed",ref:id,community:c,ts:NOW-(daysAgo-fixedAfter)*DAY,by:"Garage"});};
+  b("Inukjuak","Water truck 2","P03",48,6); b("Inukjuak","Water truck 5","P02",40,11); b("Inukjuak","Intake pipe heater","P09",34,19);
+  b("Inukjuak","Water truck 5","P02",9,null); b("Inukjuak","Water truck 6","P03",3,null);
+  b("Puvirnituq","Water truck 3","P01",12,null); b("Salluit","Sewage truck 4","P06",20,null);
+  return {events:ev};
+}
+function central(){ let c=JSON.parse(localStorage.getItem(CKEY)||"null"); if(!c){c=seed();localStorage.setItem(CKEY,JSON.stringify(c));} return c; }
+function device(){ let d=JSON.parse(localStorage.getItem(DKEY())||"null"); if(!d){d={online:true,outbox:[],cache:central().events,lastSync:NOW};saveDev(d);} return d; }
+function saveDev(d){ localStorage.setItem(DKEY(),JSON.stringify(d)); }
+function allEvents(){ const d=device(); const base=d.online?central().events:d.cache; return base.concat(d.outbox); }
+function add(ev){
+  ev.id=uid(); ev.ts=ev.ts||Date.now(); ev.by=ev.by||(AS==="region"?"KRG":AS+" garage");
+  const d=device();
+  if(d.online){const c=central();c.events.push(ev);localStorage.setItem(CKEY,JSON.stringify(c));d.cache=c.events;d.lastSync=Date.now();saveDev(d);}
+  else{d.outbox.push(ev);saveDev(d);}
+  render();
+}
+function setOnline(on){
+  const d=device(); d.online=on;
+  if(on){const c=central(); const n=d.outbox.length; c.events=c.events.concat(d.outbox); localStorage.setItem(CKEY,JSON.stringify(c));
+    d.outbox=[]; d.cache=c.events; d.lastSync=Date.now(); saveDev(d); toast(n?`Synced ${n} entr${n>1?"ies":"y"} to the region.`:"Back online. Up to date.");}
+  else{d.cache=central().events; saveDev(d); toast("Offline. New entries are saved on this device and sync later.");}
+  render();
+}
+window.addEventListener("storage",e=>{ if(e.key===CKEY && device().online){ const d=device(); d.cache=central().events; d.lastSync=Date.now(); saveDev(d); render(true);} });
+window.addEventListener("offline",()=>setOnline(false));
+
+/* ---------- Derived state ---------- */
+function stock(ev,c,p){ let q=0,last=0; ev.forEach(e=>{ if((e.type==="stock")&&e.community===c&&e.part===p){q+=e.delta;last=Math.max(last,e.ts);} }); return {q:Math.max(0,q),last}; }
+function openBreakdowns(ev,c){ const fixed=new Set(ev.filter(e=>e.type==="fixed").map(e=>e.ref)); return ev.filter(e=>e.type==="breakdown"&&(!c||e.community===c)&&!fixed.has(e.id)); }
+function sharing(ev,c){ let s=!!DEFAULT_SHARING[c]; ev.filter(e=>e.type==="share"&&e.community===c).sort((a,b)=>a.ts-b.ts).forEach(e=>s=e.on); return s; }
+function km(a,b){const R=6371,r=x=>x*Math.PI/180;const d=Math.sin(r(b.lat-a.lat)/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(r(b.lon-a.lon)/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(d)));}
+const C = n => COMMUNITIES.find(c=>c.name===n);
+function ago(ts){ if(!ts) return "never"; const d=Math.floor((Date.now()-ts)/DAY); if(d<=0){const h=Math.floor((Date.now()-ts)/36e5); return h<=0?"just now":`${h} h ago`;} return d===1?"1 day ago":`${d} days ago`; }
+function poissonQ(l,p=.95){let k=0,term=Math.exp(-l),cdf=term;while(cdf<p&&k<500){k++;term*=l/k;cdf+=term;}return k;}
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const myCommunity = () => AS==="region" ? (localStorage.getItem("ln:focus")||"Inukjuak") : AS;
+
+/* ---------- UI shell ---------- */
+const ICON={board:'<path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/>',snap:'<path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="4"/>',
+ find:'<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/>',broke:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+ plan:'<path d="M3 17h18l-2 4H5zM6 17V9h12v8M9 9V5h6v4"/>',report:'<path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7"/>'};
+const VIEWS=["board","snap","find","broke","plan","report"];
+let view = location.hash.slice(1)||"board";
+function renderShell(){
+  const sel=document.getElementById("asSel");
+  sel.innerHTML=`<option value="region">${t("regional")}</option>`+COMMUNITIES.map(c=>`<option value="${c.name}">${esc(t("garage")(c.name))}</option>`).join("");
+  sel.value=AS;
+  document.getElementById("langSel").value=lang; document.documentElement.lang=lang;
+  document.getElementById("whoami").textContent = AS==="region"?t("regional"):t("garage")(AS);
+  const d=device(); const b=document.getElementById("connBtn"); b.dataset.on=d.online;
+  document.getElementById("connTxt").textContent=d.online?t("online"):t("offline");
+  b.setAttribute("aria-label",(d.online?"Online. Tap to simulate going offline.":"Offline. Tap to reconnect and sync."));
+  const ob=document.getElementById("outbox"); ob.hidden=!d.outbox.length; ob.textContent=t("waiting")(d.outbox.length);
+  document.getElementById("tabs").innerHTML=VIEWS.map(v=>`<button data-view="${v}" ${v===view?'aria-current="page"':""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">${ICON[v]}</svg><span>${t(v)}</span></button>`).join("");
+}
+function render(flash){ renderShell(); const m=document.getElementById("main"); m.innerHTML=VIEWS_R[view](); if(flash){m.classList.remove("flash");void m.offsetWidth;m.classList.add("flash");} bind(); }
+let toastT; function toast(s){const el=document.getElementById("toast");el.textContent=s;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3500);}
+
+/* ---------- Views ---------- */
+const VIEWS_R={
+board(){
+  const ev=allEvents(); const d=device();
+  const order=[...COMMUNITIES].sort((a,b)=>(b.name===AS)-(a.name===AS));
+  const rows=order.map(c=>{
+    const open=openBreakdowns(ev,c.name); const wDown=open.filter(o=>/^Water truck/.test(o.asset)).length;
+    const run=Math.max(0,c.water-wDown); const ratio=run/c.water;
+    const st=ratio<=.5?["b-bad","⚠ Critical"]:ratio<1?["b-warn","● Reduced"]:["b-ok","✓ Normal"];
+    const trucks=Array.from({length:c.water},(_,i)=>`<span class="truck ${i>=run?"down":""}" title="${i>=run?"Out of service":"Running"}"></span>`).join("");
+    const other=open.filter(o=>!/^Water truck/.test(o.asset)).map(o=>esc(o.asset)).join(", ");
+    return `<div class="crow ${c.name===AS?"mine":""}">
+      <div><div class="cname">${c.name}</div>
+        <div class="cmeta">Water trucks running: <strong>${run} of ${c.water}</strong>${other?` · Also down: ${other}`:""}</div>
+        <div class="trucks" aria-hidden="true">${trucks}</div></div>
+      <div style="text-align:right"><span class="badge ${st[0]}">${st[1]}</span><div class="cmeta" style="margin-top:6px">${sharing(ev,c.name)?"Shares stock":"Not sharing yet"}</div></div></div>`;}).join("");
+  return `<h1>Water equipment across Nunavik</h1>
+   <p class="lede">${d.online?"Live regional picture.":"You are offline. Showing the region as of your last sync, "+ago(d.lastSync)+"."} Truck counts and stock are sample data for the demo.</p>
+   <div class="board">${rows}</div>`;
+},
+snap(){
+  if(AS==="region") return `<h1>Snap a ledger page</h1><p class="lede">Ledger pages are captured by each community's garage. Switch the view to a community at the top to try it.</p>`;
+  const key=localStorage.getItem("ln:key");
+  return `<h1>Snap a ledger page</h1>
+   <p class="lede">Keep writing in your ledger. Take a photo of the page and we turn it into entries you check before saving. The paper ledger stays yours; this makes a copy the municipality can use.</p>
+   <div class="grid2"><div>
+     <div class="drop"><label class="btn" for="photo" style="display:inline-block">Take or choose a photo</label>
+       <input id="photo" type="file" accept="image/*" capture="environment" style="position:absolute;left:-999px">
+       <p class="note">${key?"Reading with AI when online.":"Demo reader: no AI key set, so a sample reading is used. Add a key under Settings below."}</p>
+       <img id="preview" class="photo" alt="Photo of the ledger page" hidden></div>
+     <div class="btn-row"><button class="btn" id="readBtn" disabled>Read this page</button></div>
+     <p class="note" id="readMsg" role="status"></p>
+   </div><div id="confirm"></div></div>
+   <details style="margin-top:24px"><summary>Settings</summary>
+     <label class="f" for="keyIn">AI key (stays on this device only)</label><input class="field" id="keyIn" type="password" value="${esc(key||"")}" placeholder="Gemini API key">
+     <label class="f" for="modelIn">Model</label><input class="field" id="modelIn" value="${esc(localStorage.getItem("ln:model")||"gemini-2.5-flash")}">
+     <p class="note">Only photograph sample pages during the demo. Free AI tiers may use content to improve their products; real community data should use a no-training plan or a model hosted in Nunavik.</p>
+     <div class="btn-row"><button class="btn ghost" id="saveKey">Save settings</button><button class="btn ghost" id="resetAll">Reset demo data</button></div>
+   </details>`;
+},
+find(){
+  const ev=allEvents(); const me=myCommunity(); const part=localStorage.getItem("ln:part")||"P01";
+  const opts=Object.entries(PARTS).map(([k,v])=>`<option value="${k}" ${k===part?"selected":""}>${v}</option>`).join("");
+  const focusSel = AS==="region"?`<label class="f" for="focusSel">Community that needs the part</label><select class="field" id="focusSel">${COMMUNITIES.map(c=>`<option ${c.name===me?"selected":""}>${c.name}</option>`).join("")}</select>`:"";
+  const mine=stock(ev,me,part);
+  const others=COMMUNITIES.filter(c=>c.name!==me).map(c=>({c,s:stock(ev,c.name,part),share:sharing(ev,c.name),km:km(C(me),c)})).sort((a,b)=>a.km-b.km);
+  const reqs=ev.filter(e=>e.type==="request");
+  const li=others.map(o=>{
+    if(!o.share) return `<li><span><strong>${o.c.name}</strong> · ${o.km} km<br><span class="note">This community has not chosen to share its stock yet.</span></span><span class="badge b-grey">Not shared</span></li>`;
+    const has=o.s.q>0; const pending=reqs.find(r=>r.to===me&&r.from===o.c.name&&r.part===part);
+    return `<li><span><strong>${o.c.name}</strong> · ${o.km} km<br><span class="note">${o.s.q} in stock · updated ${ago(o.s.last)}</span></span>
+      ${pending?`<span class="badge b-warn">Requested</span>`:has?`<button class="btn" data-req="${o.c.name}">Request 1</button>`:`<span class="badge b-grey">None</span>`}</li>`;}).join("");
+  const incoming=reqs.filter(r=>r.from===me||AS==="region");
+  return `<h1>Find a part</h1><p class="lede">See your own stock first, then the nearest communities that share theirs. Every number shows how old it is.</p>
+   <div class="grid2"><div>${focusSel}
+     <label class="f" for="partSel">Part</label><select class="field" id="partSel">${opts}</select>
+     <div class="sheet" style="margin-top:14px"><strong>${me}</strong>: ${mine.q} ${PARTS[part].toLowerCase()} in stock<br><span class="note">Updated ${ago(mine.last)}</span></div>
+     <h2>Weather at ${me}, next 3 days</h2><div id="wx" class="wx"><div class="note">Loading…</div></div>
+     <p class="note">Strong gusts or heavy snow can ground small planes. Thresholds are settings to agree on with local staff.</p>
+   </div><div><h2>Other communities</h2><ul class="list">${li}</ul>
+     ${incoming.length?`<h2>Transfer requests</h2><ul class="list">${incoming.map(r=>`<li><span>${r.to} asks ${r.from} for 1 ${PARTS[r.part].toLowerCase()}<br><span class="note">${ago(r.ts)} · ${r.status||"Waiting for reply"}</span></span>${(!r.status&&(AS===r.from||AS==="region"))?`<button class="btn ghost" data-ok="${r.id}">Approve</button>`:""}</li>`).join("")}</ul>`:""}
+   </div></div>`;
+},
+broke(){
+  const ev=allEvents(); const me=myCommunity(); const c=C(me);
+  const assets=[...Array.from({length:c.water},(_,i)=>`Water truck ${i+1}`),...Array.from({length:c.sewage},(_,i)=>`Sewage truck ${i+1}`),"Intake pipe heater","Treatment plant chlorine pump"];
+  const open=openBreakdowns(ev,me).sort((a,b)=>a.ts-b.ts);
+  return `<h1>Breakdowns in ${me}</h1><p class="lede">Log a failure in a few taps. The regional picture updates, and the time out of service is counted for reports.</p>
+   <div class="grid2"><div class="sheet"><label class="f" for="assetSel">What broke</label><select class="field" id="assetSel">${assets.map(a=>`<option>${a}</option>`).join("")}</select>
+     <label class="f" for="bpart">Part needed</label><select class="field" id="bpart">${Object.entries(PARTS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select>
+     <div class="btn-row"><button class="btn" id="logBtn">Log breakdown</button></div></div>
+   <div><h2>Out of service now</h2>${open.length?`<ul class="list">${open.map(o=>`<li><span><strong>${esc(o.asset)}</strong><br><span class="note">Needs ${PARTS[o.part].toLowerCase()} · down ${Math.max(1,Math.round((Date.now()-o.ts)/DAY))} days</span></span><button class="btn ghost" data-fix="${o.id}">Mark fixed</button></li>`).join("")}</ul>`:`<p>Nothing is out of service. Log a breakdown when one happens.</p>`}</div></div>`;
+},
+plan(){
+  const ev=allEvents(); const me=myCommunity(); const r=EMBED.rates[me]||{};
+  const focusSel = AS==="region"?`<label class="f" for="focusSel">Community</label><select class="field" id="focusSel" style="max-width:320px">${COMMUNITIES.map(c=>`<option ${c.name===me?"selected":""}>${c.name}</option>`).join("")}</select>`:"";
+  const rows=Object.keys(PARTS).map(p=>{const [w,s]=r[p]||[0,0]; const exp=w*6+s*6; const need=poissonQ(exp); const on=stock(ev,me,p).q; const ord=Math.max(0,need-on);
+    return {p,exp,need,on,ord};}).sort((a,b)=>b.ord-a.ord);
+  const total=rows.filter(x=>x.ord>0).length;
+  return `<h1>Sealift order for ${me}</h1>
+   <p class="lede">Order by <strong>May 22, 2027</strong> to make the first sailing (estimated from the 2026 NEAS schedule). Quantities cover a year with a 95% chance of not running out, based on past use.</p>
+   ${focusSel}
+   <div class="sheet ledger" style="margin-top:12px"><div class="tablewrap"><table><thead><tr><th scope="col">Part</th><th scope="col">Used per year</th><th scope="col">In stock</th><th scope="col">Order</th><th scope="col">How</th></tr></thead>
+   <tbody>${rows.map(x=>`<tr><td>${PARTS[x.p]}</td><td>${x.exp.toFixed(1)}</td><td>${x.on}</td><td><strong>${x.ord}</strong></td><td>${x.ord?SEA_ONLY[x.p]?"Sealift only (too heavy to fly)":"Sealift; fly only if urgent":"—"}</td></tr>`).join("")}</tbody></table></div></div>
+   <p class="note">${total} parts to order. Usage history is sample data for the demo.</p>`;
+},
+report(){
+  const ev=allEvents(); const me=myCommunity(); const since=NOW-90*DAY;
+  const fixed=new Map(ev.filter(e=>e.type==="fixed").map(e=>[e.ref,e.ts]));
+  const bs=ev.filter(e=>e.type==="breakdown"&&e.community===me&&e.ts>=since);
+  const days=b=>((fixed.get(b.id)||Date.now())-b.ts)/DAY;
+  const total=Math.round(bs.reduce((s,b)=>s+days(b),0)); const longest=bs.length?Math.round(Math.max(...bs.map(days))):0;
+  const open=bs.filter(b=>!fixed.has(b.id)).length; const trucks=bs.filter(b=>/truck/.test(b.asset)).length;
+  const reqs=ev.filter(e=>e.type==="request"&&e.to===me).length;
+  const text=`Equipment reliability summary: ${me}, last 90 days
+
+• ${bs.length} breakdowns logged (${trucks} water or sewage trucks, ${bs.length-trucks} plant equipment).
+• ${total} equipment-days out of service in total; the longest single outage was ${longest} days.
+• ${open} still out of service today.
+• ${reqs} spare parts requested from other communities.
+
+These records support the municipality's case for its water pipeline (Resolution #2025-29): the trucked system depends on equipment that fails often and on parts that take weeks to arrive.
+Source: Ledger North breakdown log. Sample data for demonstration.`;
+  return `<h1>Evidence report</h1><p class="lede">A plain summary of breakdowns and delays, ready to attach to funding applications.</p>
+   ${AS==="region"?`<label class="f" for="focusSel">Community</label><select class="field" id="focusSel" style="max-width:320px">${COMMUNITIES.map(c=>`<option ${c.name===me?"selected":""}>${c.name}</option>`).join("")}</select>`:""}
+   <pre class="report" id="rep">${esc(text)}</pre><div class="btn-row"><button class="btn" id="copyRep">Copy report</button></div>`;
+}};
+
+/* ---------- Ledger reading ---------- */
+const PROMPT=`You read photos of handwritten spare-parts ledger pages from a municipal garage.
+Return ONLY a JSON array. One object per ledger row:
+{"date":"YYYY-MM-DD or null","part":"string","qty_in":number,"qty_out":number,"initials":"string or null","confidence":0.0-1.0,"raw_text":"exactly what you read"}
+If a value is unclear, make your best guess and set confidence below 0.7. Never invent rows. Ignore crossed-out rows.`;
+const DEMO_ROWS=[
+ {date:"2026-09-24",part:"Tank heater element",qty_in:4,qty_out:0,initials:"JK",confidence:.93},
+ {date:"2026-09-25",part:"Hydraulic hose kit",qty_in:0,qty_out:1,initials:"MA",confidence:.88},
+ {date:"2026-09-25",part:"Water pump",qty_in:0,qty_out:1,initials:"MA",confidence:.81},
+ {date:"2026-09-26",part:"Filter cartridges",qty_in:6,qty_out:0,initials:"JK",confidence:.58}];
+function matchPart(name){ const n=(name||"").toLowerCase(); let best="P01",score=-1;
+  Object.entries(PARTS).forEach(([k,v])=>{const s=v.toLowerCase().split(/[^a-z]+/).filter(w=>w.length>2&&n.includes(w)).length; if(s>score){score=s;best=k;}}); return best; }
+let photoData=null, rowsDraft=null;
+async function readPage(){
+  const msg=document.getElementById("readMsg"); const key=localStorage.getItem("ln:key");
+  if(!device().online){ msg.textContent="Photo saved on this device. It will be read when you are back online."; return; }
+  msg.textContent="Reading the page…";
+  try{
+    if(key){
+      const model=localStorage.getItem("ln:model")||"gemini-2.5-flash";
+      const [meta,b64]=photoData.split(","); const mime=meta.match(/data:(.*?);/)[1];
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:PROMPT},{inline_data:{mime_type:mime,data:b64}}]}],generationConfig:{response_mime_type:"application/json"}})});
+      if(!res.ok) throw new Error("The AI service returned "+res.status+". Check the key and model name.");
+      const data=await res.json(); const txt=data.candidates[0].content.parts.map(p=>p.text||"").join("");
+      rowsDraft=JSON.parse(txt.replace(/```json|```/g,"").trim());
+    } else { await new Promise(r=>setTimeout(r,900)); rowsDraft=DEMO_ROWS.map(r=>({...r})); }
+    rowsDraft.forEach(r=>r.pid=matchPart(r.part));
+    msg.textContent=`Found ${rowsDraft.length} rows. Check the highlighted ones.`; drawConfirm();
+  }catch(e){ msg.textContent="Could not read the page: "+e.message+" You can add rows by hand instead."; rowsDraft=[{date:new Date().toISOString().slice(0,10),part:"",qty_in:0,qty_out:0,initials:"",confidence:0,pid:"P01"}]; drawConfirm(); }
+}
+function drawConfirm(){
+  const el=document.getElementById("confirm"); if(!el||!rowsDraft) return;
+  el.innerHTML=`<div class="sheet ledger"><h2 style="margin-top:0">Check before saving</h2><div class="tablewrap"><table><thead><tr><th scope="col">Date</th><th scope="col">Part</th><th scope="col">In</th><th scope="col">Out</th><th scope="col">By</th></tr></thead><tbody>
+   ${rowsDraft.map((r,i)=>`<tr class="${r.confidence<.7?"unsure":""}"><td><input aria-label="Date row ${i+1}" data-i="${i}" data-k="date" value="${esc(r.date||"")}"></td>
+    <td><select aria-label="Part row ${i+1}" data-i="${i}" data-k="pid">${Object.entries(PARTS).map(([k,v])=>`<option value="${k}" ${k===r.pid?"selected":""}>${v}</option>`).join("")}</select>${r.confidence<.7?`<div class="note">⚠ Unsure, read as “${esc(r.raw_text||r.part)}”</div>`:""}</td>
+    <td><input type="number" min="0" aria-label="Quantity in row ${i+1}" data-i="${i}" data-k="qty_in" value="${+r.qty_in||0}"></td>
+    <td><input type="number" min="0" aria-label="Quantity out row ${i+1}" data-i="${i}" data-k="qty_out" value="${+r.qty_out||0}"></td>
+    <td><input aria-label="Initials row ${i+1}" data-i="${i}" data-k="initials" value="${esc(r.initials||"")}" style="max-width:70px"></td></tr>`).join("")}
+   </tbody></table></div><div class="btn-row"><button class="btn" id="saveRows">Save ${rowsDraft.length} entries</button></div></div>`;
+  el.querySelectorAll("[data-i]").forEach(inp=>inp.addEventListener("change",()=>{const r=rowsDraft[+inp.dataset.i];r[inp.dataset.k]=inp.type==="number"?+inp.value:inp.value;}));
+  document.getElementById("saveRows").onclick=()=>{
+    const d0=device(); const wasOnline=d0.online;
+    rowsDraft.forEach(r=>{const delta=(+r.qty_in||0)-(+r.qty_out||0); if(delta) add({type:"stock",community:AS,part:r.pid,delta,reason:"ledger page",by:(r.initials||"")+" via ledger photo",ts:Date.now()});});
+    const n=rowsDraft.length; rowsDraft=null; photoData=null; render();
+    toast(wasOnline?`Saved ${n} entries and shared with the region.`:`Saved ${n} entries on this device. They will sync when you are back online.`);
+  };
+}
+
+/* ---------- Weather (Open-Meteo, cached for offline) ---------- */
+async function loadWx(name){
+  const el=document.getElementById("wx"); if(!el) return; const c=C(name); const ck="ln:wx:"+name;
+  const show=(days,live,at)=>{ el.innerHTML=days.map(d=>{const risk=d.g>60||d.s>10?["b-bad","High risk"]:d.g>40||d.s>4?["b-warn","Some risk"]:["b-ok","Flyable"];
+     return `<div><strong>${new Date(d.t+"T12:00").toLocaleDateString(lang,{weekday:"short"})}</strong><br>Gusts ${Math.round(d.g)} km/h<br>Snow ${d.s.toFixed(1)} cm<br><span class="badge ${risk[0]}">${risk[1]}</span></div>`;}).join("")+(live?"":`<p class="note" style="flex-basis:100%">Saved forecast from ${ago(at)}.</p>`); };
+  if(device().online){ try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&daily=wind_gusts_10m_max,snowfall_sum&timezone=auto&forecast_days=3`;
+    const d=(await (await fetch(u)).json()).daily; const days=d.time.map((t,i)=>({t,g:d.wind_gusts_10m_max[i]||0,s:d.snowfall_sum[i]||0}));
+    localStorage.setItem(ck,JSON.stringify({at:Date.now(),days})); show(days,true); return; }catch(e){} }
+  const cached=JSON.parse(localStorage.getItem(ck)||"null");
+  if(cached) show(cached.days,false,cached.at); else el.innerHTML=`<div class="note">No forecast saved yet. It downloads next time you are online.</div>`;
+}
+
+/* ---------- Event binding ---------- */
+function bind(){
+  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.view;location.hash=view;render();document.getElementById("main").focus();});
+  const q=id=>document.getElementById(id);
+  if(q("focusSel")) q("focusSel").onchange=e=>{localStorage.setItem("ln:focus",e.target.value);render();};
+  if(q("partSel")) q("partSel").onchange=e=>{localStorage.setItem("ln:part",e.target.value);render();};
+  if(view==="find") loadWx(myCommunity());
+  document.querySelectorAll("[data-req]").forEach(b=>b.onclick=()=>{add({type:"request",from:b.dataset.req,to:myCommunity(),part:localStorage.getItem("ln:part")||"P01"});toast(device().online?"Request sent.":"Request saved. It will be sent when you are back online.");});
+  document.querySelectorAll("[data-ok]").forEach(b=>b.onclick=()=>{const c=central();const r=c.events.find(e=>e.id===b.dataset.ok);
+    if(r){r.status="Approved, shipping on next flight";localStorage.setItem(CKEY,JSON.stringify(c));const d=device();d.cache=c.events;saveDev(d);}render();toast("Approved.");});
+  document.querySelectorAll("[data-fix]").forEach(b=>b.onclick=()=>add({type:"fixed",ref:b.dataset.fix,community:myCommunity()}));
+  if(q("logBtn")) q("logBtn").onclick=()=>{add({type:"breakdown",community:myCommunity(),asset:q("assetSel").value,part:q("bpart").value});toast(device().online?"Breakdown logged. The region can see it.":"Breakdown saved on this device.");};
+  if(q("photo")) q("photo").onchange=e=>{const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{photoData=r.result;const p=q("preview");p.src=photoData;p.hidden=false;q("readBtn").disabled=false;}; r.readAsDataURL(f);};
+  if(q("readBtn")){ q("readBtn").onclick=readPage; if(!localStorage.getItem("ln:key")) q("readBtn").disabled=false; }
+  if(rowsDraft) drawConfirm();
+  if(q("saveKey")) q("saveKey").onclick=()=>{localStorage.setItem("ln:key",q("keyIn").value.trim());localStorage.setItem("ln:model",q("modelIn").value.trim()||"gemini-2.5-flash");render();toast("Settings saved on this device.");};
+  if(q("resetAll")) q("resetAll").onclick=()=>{Object.keys(localStorage).filter(k=>k.startsWith("ln:")&&k!=="ln:key"&&k!=="ln:model").forEach(k=>localStorage.removeItem(k));location.reload();};
+  if(q("copyRep")) q("copyRep").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(q("rep").textContent);toast("Report copied.");};
+}
+document.getElementById("connBtn").onclick=()=>setOnline(!device().online);
+document.getElementById("asSel").onchange=e=>{AS=e.target.value;localStorage.setItem("ln:lastAs",AS);const u=new URL(location);u.searchParams.set("as",AS);history.replaceState(null,"",u);rowsDraft=null;render();};
+document.getElementById("langSel").onchange=e=>{lang=e.target.value;localStorage.setItem("ln:lang",lang);render();};
+window.addEventListener("hashchange",()=>{const v=location.hash.slice(1);if(VIEWS.includes(v)&&v!==view){view=v;render();}});
+if(!VIEWS.includes(view)) view="board";
+render();
+</script>
+</body>
+</html>

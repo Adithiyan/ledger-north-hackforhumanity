@@ -1,0 +1,38 @@
+flowchart LR
+  subgraph Community["Community garage (e.g. Inukjuak)"]
+    Paper["Paper ledger<br/>kept by employee"]
+    Phone["Phone: Ledger North<br/>Snap · Breakdowns · Find a part"]
+    Local[("Local copy on device<br/>events + outbox + cached region")]
+    Paper -->|photo| Phone
+    Phone -->|confirmed entries| Local
+  end
+
+  subgraph Cloud["Shared store (MVP: 2-tab sim · Later: KRG-hosted)"]
+    Events[("Append-only event log<br/>stock · breakdown · fixed · request · share")]
+  end
+
+  subgraph Region["KRG regional view"]
+    Board["Regional board<br/>trucks running per community"]
+    Plan["Sealift order plan<br/>qty + order-by date"]
+    Report["Evidence report<br/>for pipeline funding"]
+  end
+
+  AI["Vision AI<br/>reads handwriting<br/>(online only)"]
+  WX["Open-Meteo weather<br/>(cached offline)"]
+
+  Phone -.->|when online| AI
+  AI -.->|rows to confirm| Phone
+  Local <-->|sync when connection returns| Events
+  Events --> Board
+  Events --> Plan
+  Events --> Report
+  WX -.-> Phone
+
+  Later1["Later: SMS fallback"]:::later
+  Later2["Later: smart paper + QR"]:::later
+  Later3["Later: FM radio notices"]:::later
+  Later1 -.-> Events
+  Later2 -.-> Paper
+  Report -.-> Later3
+
+  classDef later fill:#eeeeee,stroke:#999,stroke-dasharray:4 3,color:#555
