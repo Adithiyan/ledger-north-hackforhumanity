@@ -16,7 +16,8 @@ Open `http://localhost:5173/?as=Inukjuak` and `http://localhost:5173/?as=region`
 ## Notes
 
 - Truck counts (outside Inukjuak and Puvirnituq), stock, usage rates and flight frequencies are **sample data**.
-- The Gemini key is entered in the app and stays in the browser's localStorage. It is never committed.
+- AI keys are entered in the app (Snap ledger → Settings) and stay in the browser's localStorage. They are never committed.
+- Hackathon only: the live site may build in a free-tier Groq key from the `GROQ_KEY` repo secret so judges can try the AI without a key. That key is visible in the public bundle, has no billing, and is revoked after the event. Production would hold the key on a server (KRG), never in the browser.
 - Inuktitut is not machine-translated; that option stays disabled until community review.
 
 License: MIT

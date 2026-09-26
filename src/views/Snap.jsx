@@ -7,6 +7,8 @@ import { t } from "../i18n.js";
 import { PART_OPTIONS } from "./common.jsx";
 
 
+const BUILT_IN_GROQ = import.meta.env.VITE_GROQ_KEY || "";
+
 export default function Snap() {
   const as = store.getAs();
   const [photo, setPhoto] = useState(null);
@@ -15,8 +17,9 @@ export default function Snap() {
   const [camOn, setCamOn] = useState(false);
   const [failed, setFailed] = useState(false);
   // Saved reader settings (per provider), and the draft being edited in Settings.
-  const provider = store.getPref("provider") || "demo";
-  const key = store.getPref("key:" + provider) || "";
+  // Optional built-in key from the GROQ_KEY repo secret (free tier, revoked after the event); a key saved here wins.
+  const provider = store.getPref("provider") || (BUILT_IN_GROQ ? "groq" : "demo");
+  const key = store.getPref("key:" + provider) || (provider === "groq" ? BUILT_IN_GROQ : "");
   const model = store.getPref("model:" + provider) || PROVIDERS[provider].model;
   const aiOn = provider !== "demo" && !!key;
   const [provIn, setProvIn] = useState(provider);

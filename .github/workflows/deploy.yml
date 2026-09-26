@@ -21,6 +21,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Optional: free-tier Groq key from repo secrets so judges can read photos without entering one.
+          # It is visible in the public bundle: use a key with no billing and revoke it after the event.
+          VITE_GROQ_KEY: ${{ secrets.GROQ_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
