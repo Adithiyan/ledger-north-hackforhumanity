@@ -1,5 +1,5 @@
 :root{
-  --ink:#1B3A4B; --ink-soft:#4A6272; --paper:#F6F8F9; --sheet:#FFFFFF; --rule:#C9D8E3; --margin:#D9534F;
+  --ink:#1B3A4B; --ink-soft:#4A6272; --paper:#F4F6F8; --sheet:#FFFFFF; --rule:#E2E7EC; --margin:#D9534F; --line:#EEF1F4; --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
   --ok:#23704A; --ok-bg:#E3F2EA; --warn:#8A5A00; --warn-bg:#FFF1CC; --bad:#A4231C; --bad-bg:#FBE4E2;
   --focus:#0B63CE; --radius-s:6px; --radius-l:14px;
   font-family:"Atkinson Hyperlegible", "Segoe UI", Verdana, sans-serif; font-size:18px; line-height:1.45; color:var(--ink);
@@ -59,7 +59,7 @@ nav.tabs button[aria-current="page"]{background:var(--ink);color:#fff}
 
 /* sheet = ledger paper */
 .sheet{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius-l);padding:16px;position:relative}
-.ledger{background-image:repeating-linear-gradient(#fff 0 43px,var(--rule) 43px 44px);border-left:3px double var(--margin);padding-left:14px}
+.ledger{padding:0;overflow:hidden}
 table{border-collapse:collapse;width:100%}
 .tablewrap{overflow-x:auto}
 th,td{text-align:left;padding:10px 8px;vertical-align:middle;border-bottom:1px solid var(--rule)}
@@ -134,3 +134,30 @@ nav.tabs button[aria-current="page"]:hover{background:var(--ink)}
 }
 .steps-inline{display:inline-flex;flex-wrap:wrap;gap:4px 10px;font-size:.9rem;color:var(--ink-soft)}
 .steps-inline .done{color:var(--ok);font-weight:700}
+
+/* ---- Clean card + data-table look (replaces the notebook style) ---- */
+.sheet,.tile,.system,.crow,.welcome{box-shadow:var(--shadow);border-color:var(--rule)}
+.sheet{border-radius:12px}
+.ledger h2{padding:14px 16px 0}
+.ledger .btn-row{padding:0 16px 16px}
+.ledger table{font-size:.95rem}
+.ledger thead th{background:#F8FAFB;color:var(--ink-soft);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;padding:10px 16px;border-bottom:1px solid var(--rule)}
+.ledger td{padding:10px 16px;border-bottom:1px solid var(--line)}
+.ledger tbody tr:not(.group):hover td{background:#F8FAFB}
+.ledger tbody:last-child tr:last-child td{border-bottom:0}
+.ledger tr.group th{background:var(--sheet);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);padding:16px 16px 6px;border-bottom:1px solid var(--rule)}
+.ledger tr.unsure td{background:var(--warn-bg)}
+.badge{font-size:.82rem;padding:3px 10px;border:1px solid transparent}
+.b-ok{border-color:#BFE0CC}.b-warn{border-color:#F2D58A}.b-bad{border-color:#F1B9B4}.b-grey{border-color:#D6DEE3}
+.tile{border-left-width:4px;border-radius:12px}
+.tile strong{font-size:1.6rem;letter-spacing:-.01em}
+.system{border-radius:12px;transition:border-color .15s,box-shadow .15s}
+.system:hover{box-shadow:0 4px 12px rgba(16,24,40,.08)}
+.list li{border-bottom-color:var(--line)}
+h2{letter-spacing:-.005em}
+.btn{border-radius:8px}
+.btn.ghost{border-color:#7A8C99;color:var(--ink)}
+.btn.ghost:hover{border-color:var(--ink)}
+.field,td input,td select{border-color:#7A8C99;border-radius:8px}
+.roadmap{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.roadmap ul{margin:.6em 0 0;padding-left:1.1em}.roadmap li{margin:.35em 0}

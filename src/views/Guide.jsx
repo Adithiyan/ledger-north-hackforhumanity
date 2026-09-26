@@ -66,6 +66,50 @@ export default function Guide() {
         </tr></tbody>
       </table></div>
 
+      <h2>What's next</h2>
+      <div className="roadmap">
+        <div className="sheet">
+          <span className="badge b-ok">Now · this demo</span>
+          <ul>
+            <li>Photo of the paper ledger becomes checked digital entries</li>
+            <li>Every community's ledger in one place, with sharing by choice</li>
+            <li>Find a part, request it, track it from shipped to received</li>
+            <li>Works offline and syncs when a connection returns</li>
+          </ul>
+        </div>
+        <div className="sheet">
+          <span className="badge b-warn">Next · pilot with KRG</span>
+          <ul>
+            <li>Pilot in Inukjuak and one neighbour, with the garage staff</li>
+            <li>Real Air Inuit schedules instead of sample flight times</li>
+            <li>Hosted on a KRG server in Nunavik; AI on a no-training plan</li>
+            <li>Printed ledger sheets with part codes for easier reading</li>
+          </ul>
+        </div>
+        <div className="sheet">
+          <span className="badge b-grey">Later · with community consent</span>
+          <ul>
+            <li><strong>Suppliers</strong> see combined regional demand (totals only, never individual ledgers) to stock parts before the sealift and warn about backorders</li>
+            <li><strong>One regional sealift order</strong> instead of eight separate ones</li>
+            <li><strong>Prediction:</strong> failure patterns by equipment model show what to stock and which equipment holds up in the Arctic</li>
+            <li><strong>Spare-parts pools</strong> at hub communities, one flight from everyone</li>
+            <li>After the pipeline: the same ledger for road and snow-removal fleets</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Questions we expect</h2>
+      <dl className="gloss">
+        <dt>How do parts actually travel?</dt>
+        <dd>As air cargo on existing scheduled flights between communities, the way freight already moves; heavy parts go by sealift. Ledger North does not replace that. It makes the part findable, tracks the handoff, and updates both ledgers.</dd>
+        <dt>What does the AI cost?</dt>
+        <dd>The demo uses free tiers. One ledger page is about 3,000 tokens, a fraction of a cent on a paid plan, so a garage's pages cost cents a year. In production the key sits on a KRG server, never on phones, or the model runs on KRG's own hardware.</dd>
+        <dt>What about poor connectivity?</dt>
+        <dd>Everything works offline. Only the confirmed text rows sync (a few kilobytes per page); photos are shrunk before reading and are not stored. Reading a photo waits until a connection is available.</dd>
+        <dt>Who owns the data?</dt>
+        <dd>Each community. Sharing is off by default, and anything shared beyond Nunavik would be combined totals under a written agreement.</dd>
+      </dl>
+
       <h2>Words used in the app</h2>
       <dl className="gloss">
         <dt>Ledger</dt><dd>The paper book where garage staff write parts in and out.</dd>
