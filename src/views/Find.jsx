@@ -4,7 +4,7 @@ import * as store from "../store/store.js";
 import { COMMUNITIES, CONNECTIVITY, HUBS, PARTS } from "../data/seed.js";
 import { C, DAY, ago, estArrivalDays, km, lastSeen, sharing, stock } from "../store/derive.js";
 import { isHighRisk, loadWeather, riskOf } from "../weather.js";
-import { myCommunity, FocusSelect } from "./common.jsx";
+import { myCommunity, FocusSelect, PART_OPTIONS } from "./common.jsx";
 import { toast } from "../toast.js";
 import { getLang, t } from "../i18n.js";
 
@@ -64,7 +64,7 @@ export default function Find() {
           <FocusSelect label="Community that needs the part" />
           <label className="f" htmlFor="partSel">Part</label>
           <select className="field" id="partSel" value={part} onChange={(e) => store.setPref("part", e.target.value)}>
-            {Object.entries(PARTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {PART_OPTIONS}
           </select>
           <div className="sheet" style={{ marginTop: 14 }}>
             <strong>{me}</strong>: {mine.q} {PARTS[part].toLowerCase()} in stock<br />

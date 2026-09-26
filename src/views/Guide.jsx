@@ -61,7 +61,7 @@ export default function Guide() {
         <thead><tr><th scope="col">Real</th><th scope="col">Sample (made up for the demo)</th><th scope="col">Simulated</th></tr></thead>
         <tbody><tr>
           <td>Community names and locations · Inukjuak has 6 water trucks, Puvirnituq 5 (news reports) · Fibre in Kuujjuarapik, Umiujaq, Inukjuak, Puvirnituq · Live weather (Open-Meteo) · Sealift order date (estimated from the 2026 NEAS schedule)</td>
-          <td>Truck counts elsewhere · Stock levels · Usage rates · Breakdowns · Flight frequencies</td>
+          <td>Parts catalogue (truck, treatment plant, intake and distribution parts) · Truck counts elsewhere · Stock levels · Usage rates · Breakdowns · Flight frequencies</td>
           <td>Sync: two browser tabs stand in for two devices · Without an AI key, a demo reader returns a fixed sample page</td>
         </tr></tbody>
       </table></div>

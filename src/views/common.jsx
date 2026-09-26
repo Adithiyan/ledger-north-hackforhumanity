@@ -1,5 +1,5 @@
 import * as store from "../store/store.js";
-import { COMMUNITIES } from "../data/seed.js";
+import { COMMUNITIES, PARTS, PART_SYSTEM, SYSTEMS } from "../data/seed.js";
 
 // The community a view is about: the device's own, or the one the regional user picked.
 export function myCommunity() {
@@ -20,3 +20,10 @@ export function FocusSelect({ label = "Community", style }) {
     </>
   );
 }
+
+// Part <option>s grouped by water system, for every part picker.
+export const PART_OPTIONS = SYSTEMS.map(([id, label]) => (
+  <optgroup key={id} label={label}>
+    {Object.keys(PARTS).filter((p) => PART_SYSTEM[p] === id).map((p) => <option key={p} value={p}>{PARTS[p]}</option>)}
+  </optgroup>
+));

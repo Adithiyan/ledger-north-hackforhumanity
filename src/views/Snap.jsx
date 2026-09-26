@@ -1,12 +1,11 @@
 // F2 Snap ledger → confirm → save.
 import { useState } from "react";
 import * as store from "../store/store.js";
-import { PARTS } from "../data/seed.js";
 import { readPage } from "../ai/readLedger.js";
 import { toast } from "../toast.js";
 import { t } from "../i18n.js";
+import { PART_OPTIONS } from "./common.jsx";
 
-const PART_OPTIONS = Object.entries(PARTS).map(([k, v]) => <option key={k} value={k}>{v}</option>);
 
 export default function Snap() {
   const as = store.getAs();

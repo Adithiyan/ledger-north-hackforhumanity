@@ -2,7 +2,7 @@
 // Demo sync: a shared "ln:central" key acts as the server; each device (tab, via ?as=)
 // keeps its own key with online flag, outbox, cached events and lastSync.
 // The `storage` event gives live updates between tabs. Swap this module for a real backend later.
-import { seedEvents } from "../data/seed.js";
+import { SEED_VERSION, seedEvents } from "../data/seed.js";
 import { toast } from "../toast.js";
 
 const CKEY = "ln:central";
@@ -30,7 +30,11 @@ export function onRemoteUpdate(fn) { remoteListeners.add(fn); return () => remot
 /* ---------- central + device ---------- */
 function central() {
   let c = readJSON(CKEY);
-  if (!c) { c = { events: seedEvents(uid) }; write(CKEY, JSON.stringify(c)); }
+  if (!c || c.v !== SEED_VERSION) {
+    // New or outdated demo seed: start fresh, and drop device copies of the old one.
+    Object.keys(localStorage).filter((k) => k.startsWith("ln:dev:")).forEach((k) => localStorage.removeItem(k));
+    c = { v: SEED_VERSION, events: seedEvents(uid) }; write(CKEY, JSON.stringify(c));
+  }
   return c;
 }
 function saveCentral(c) { write(CKEY, JSON.stringify(c)); }

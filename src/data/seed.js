@@ -18,7 +18,41 @@ export const PARTS = {
   P04: "Truck battery (cold-rated)", P05: "Winter truck tire", P06: "Sewage vacuum pump",
   P07: "Chlorine dosing pump", P08: "Filter cartridge set", P09: "Intake heat-trace cable",
   P10: "Home tank level switch",
+  // Treatment plant and distribution parts (SAMPLE catalogue)
+  P11: "UV disinfection lamp", P12: "Chlorine residual sensor", P13: "Raw-water intake pump",
+  P14: "Turbidity sensor", P15: "Truck fill-station valve", P16: "Reservoir level sensor",
+  P17: "Standby generator filter kit",
 };
+
+// Which part of the water system each part keeps running, in the order water flows.
+export const SYSTEMS = [
+  ["intake", "Intake & distribution"],
+  ["plant", "Treatment plant"],
+  ["truck", "Water trucks"],
+  ["sewage", "Sewage trucks"],
+];
+export const PART_SYSTEM = {
+  P01: "truck", P02: "truck", P03: "truck", P04: "truck", P05: "truck", P06: "sewage",
+  P07: "plant", P08: "plant", P09: "intake", P10: "intake",
+  P11: "plant", P12: "plant", P13: "intake", P14: "plant", P15: "intake", P16: "intake", P17: "plant",
+};
+const NEW_PARTS = {
+  //       Inukjuak Puvirnituq Akulivik Ivujivik Umiujaq Kuujjuarapik Salluit Kuujjuaq   rate [winter, summer]
+  P11: [[0, 4, 1, 2, 2, 3, 1, 5], [0.17, 0.17]],
+  P12: [[1, 2, 0, 1, 1, 2, 1, 3], [0.08, 0.08]],
+  P13: [[1, 1, 0, 0, 1, 1, 0, 2], [0.05, 0.02]],
+  P14: [[0, 1, 1, 0, 1, 2, 0, 2], [0.08, 0.08]],
+  P15: [[2, 1, 1, 1, 0, 2, 1, 3], [0.12, 0.06]],
+  P16: [[1, 2, 1, 0, 1, 1, 1, 2], [0.06, 0.04]],
+  P17: [[3, 2, 1, 2, 2, 4, 2, 6], [0.25, 0.10]],
+};
+["Inukjuak", "Puvirnituq", "Akulivik", "Ivujivik", "Umiujaq", "Kuujjuarapik", "Salluit", "Kuujjuaq"].forEach((c, i) =>
+  Object.entries(NEW_PARTS).forEach(([p, [qty, rate]], j) => {
+    EMBED.inv.push([c, p, qty[i], `2026-09-${String(((i * 7 + j * 3) % 24) + 1).padStart(2, "0")}`]);
+    EMBED.rates[c][p] = rate;
+  })
+);
+
 export const SEA_ONLY = { P05: true };
 // Estimated from NEAS 2026 first-sailing packaging cut-off (May 22). Verify yearly.
 export const ORDER_BY = "2027-05-22";
@@ -45,6 +79,9 @@ export const FLIGHT_LEGS = [
   ["Salluit", "Kuujjuaq", 110, 2],
 ];
 
+// Bump when the seed changes so browsers holding an older demo seed start fresh.
+export const SEED_VERSION = 2;
+
 const DAY = 864e5;
 
 // Seeded event log: ledger counts + breakdowns. Inukjuak starts at 4 of 6.
@@ -63,6 +100,7 @@ export function seedEvents(uid, now = Date.now()) {
   b("Inukjuak", "Intake pipe heater", "P09", 34, 19);
   b("Inukjuak", "Water truck 5", "P02", 9, null);
   b("Inukjuak", "Water truck 6", "P03", 3, null);
+  b("Inukjuak", "Treatment plant UV unit", "P11", 5, null);
   b("Puvirnituq", "Water truck 3", "P01", 12, null);
   b("Salluit", "Sewage truck 4", "P06", 20, null);
   return ev;
