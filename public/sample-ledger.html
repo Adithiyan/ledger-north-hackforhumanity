@@ -12,6 +12,7 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: #E9ECEE; font-family: "Atkinson Hyperlegible", sans-serif; color: var(--ink); }
   .bar { max-width: 820px; margin: 0 auto; padding: 16px; font-size: 16px; line-height: 1.5; }
+  .bar .dl { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px; margin-right: 8px; background: var(--ink); color: #fff; border-radius: 6px; font-weight: 700; text-decoration: none; }
   .bar button { font: inherit; min-height: 44px; padding: 8px 16px; border: 2px solid var(--ink); background: #fff; border-radius: 6px; cursor: pointer; margin-right: 8px; }
   .page { max-width: 820px; margin: 0 auto 24px; background: var(--paper); padding: 28px 28px 40px 70px; position: relative;
           box-shadow: 0 2px 10px rgba(0,0,0,.15); background-image: repeating-linear-gradient(var(--paper) 0 51px, var(--rule) 51px 52px); background-position: 0 118px; }
@@ -23,15 +24,19 @@
   td { height: 52px; font-family: "Caveat", cursive; font-size: 30px; color: var(--pen); vertical-align: bottom; padding: 0 6px 4px 0; }
   td.messy { font-family: "Reenie Beanie", cursive; font-size: 32px; transform: rotate(-2deg); display: inline-block; opacity: .8; }
   .strike { text-decoration: line-through; text-decoration-thickness: 2px; }
+  /* ?image: only the filled page, used to render sample-ledger.png */
+  body.image { background: var(--paper); } body.image .bar, body.image .page + .page { display: none; }
+  body.image .page { margin: 0; box-shadow: none; }
   @media print { body { background: #fff; } .bar { display: none; } .page { box-shadow: none; margin: 0; page-break-after: always; } }
   @media (prefers-color-scheme: dark) { body { background: #1c2327; } .bar { color: #e6edf1; } .bar button { background: #2a3339; color: #e6edf1; border-color: #e6edf1; } }
 </style>
 </head>
 <body>
+<script>if (location.search.includes("image")) document.body.classList.add("image");</script>
 <div class="bar">
   <strong>Sample ledger page for the Ledger North demo.</strong> This is made-up sample data written by the team, not a real community record.
   Photograph this screen with a phone, or print it. Page 2 is a blank page to fill in by hand.
-  <p><button onclick="print()">Print both pages</button><a href="./">Back to Ledger North</a></p>
+  <p><a class="dl" href="sample-ledger.png" download="sample-ledger-page.png">Download as image (PNG)</a> <button onclick="print()">Print both pages</button> <a href="./#snap">Back to Ledger North</a></p>
 </div>
 
 <section class="page" aria-label="Sample filled ledger page">

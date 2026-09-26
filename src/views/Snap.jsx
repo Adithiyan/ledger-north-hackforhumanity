@@ -33,8 +33,14 @@ export default function Snap() {
     </>
   );
 
-  function onFile(e) {
+  async function onFile(e) {
     const f = e.target.files[0]; if (!f) return;
+    if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+      setMsg("Opening the PDF…");
+      try { setPhoto(await pdfToImage(f)); setMsg("First page of the PDF is ready to read."); }
+      catch { setMsg("Could not open this PDF. Try a photo or image instead."); }
+      return;
+    }
     const r = new FileReader(); r.onload = () => setPhoto(r.result); r.readAsDataURL(f);
   }
 
@@ -97,10 +103,10 @@ export default function Snap() {
             {camOn ? <Camera onShot={(d) => { setPhoto(d); setCamOn(false); }} onClose={() => setCamOn(false)} /> : (
               <div className="btn-row" style={{ justifyContent: "center", marginTop: 0 }}>
                 <button className="btn" onClick={() => setCamOn(true)}>Use camera</button>
-                <label className="btn ghost" htmlFor="photo">Choose a picture</label>
+                <label className="btn ghost" htmlFor="photo">Choose a picture or PDF</label>
               </div>
             )}
-            <input id="photo" type="file" accept="image/*" className="sr" onChange={onFile} />
+            <input id="photo" type="file" accept="image/*,application/pdf,.pdf" className="sr" onChange={onFile} />
             <p className="note">{aiOn
               ? `Reading with ${PROVIDERS[provider].label.split(" (")[0]} when online.`
               : "Demo reader: no AI key set, so a fixed sample page is used. Add a Groq or Gemini key under Settings below."}{" "}
@@ -207,4 +213,20 @@ function PhoneHint() {
       </div>
     </details>
   );
+}
+
+// Scanned ledger pages often arrive as PDF: render page 1 to a JPEG with pdf.js (loaded only when needed).
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/";
+async function pdfToImage(file) {
+  const pdfjs = await import(/* @vite-ignore */ PDFJS + "pdf.min.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.mjs";
+  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const page = await doc.getPage(1);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: Math.min(3, 1600 / Math.max(base.width, base.height)) });
+  const cv = document.createElement("canvas"); cv.width = viewport.width; cv.height = viewport.height;
+  const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+  // "print" intent renders without requestAnimationFrame, so it also finishes in a background tab.
+  await page.render({ canvasContext: ctx, viewport, intent: "print" }).promise;
+  return cv.toDataURL("image/jpeg", 0.9);
 }
